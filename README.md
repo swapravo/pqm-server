@@ -2,7 +2,7 @@
 
 TODO List
 
-1. Set Account's and IPs reputation
+1. Set Accounts' and IPs' reputation
 2. Cross device sync as an optional feature (That would need the messages to persist on our servers. That isn't the default case.)
 3. Implement a TLS layer preferably using PQ SSL.
 4. Public Key -> QR Code-like representation that is really easy for a person to remember.
