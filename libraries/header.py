@@ -1,11 +1,10 @@
-from walrus import Database
+from redis import Redis
 from socket import SHUT_RDWR
 from os import urandom, remove
 from sys import byteorder
 from logging import basicConfig, info, exception, DEBUG, debug, getLogger
 from time import time
 from subprocess import Popen, PIPE
-#from threading import Timer
 from hashlib import sha512, blake2b
 from string import printable
 from pathlib import Path
@@ -68,7 +67,8 @@ bcc_address_list_size = 1
 
 cc_address_list_size = 1
 
-username_availability_check_request_size = 1024 * 13 # THIS NEEDS TO BE TRIMMED # 1 + nonce_size + max_username_size + request_size + rolling_public_key_size + hash_size
+username_availability_check_request_size = 1024 * 13 # THIS NEEDS TO BE TRIMMED
+# 1 + nonce_size + max_username_size + request_size + rolling_public_key_size + hash_size
 
 username_availability_check_response_size = 1024 * 16 # THIS NEEDS TO BE TRIMMED
 
@@ -82,29 +82,26 @@ buffer_sizes = (1024 ** 1 * 16, 1024 ** 1 * 20, 1024 ** 1 * 32, 1024 ** 1 * 32, 
 
 # CHANGE THESE VALUES ACCORDING TO THE PLAN OF THE CLIENT
 
-max_requests_per_second = 2
 
-block_second = 5
+# (number_of_queries, in_period_of_time = block_time (s))
 
-max_requests_per_minute = 20
+stranger_ttl = 10 * 60
 
-block_minute = 60
+request_filter_0 = (4, 10)
 
-max_requests_per_hour = 250
+request_filter_1 = (20, 60)
 
-block_hour = 60*60
+request_filter_2 = (200, 60*15)
 
-max_requests_per_day = 1000
+request_filter_3 = (400, 60*60)
 
-block_day = 60*60*24
-
-max_emails_per_minute = 3
+request_filter_4 = (2000, 60*60*12)
 
 max_emails_per_hour = 20
 
-max_emails_pet_day = 100
+max_emails_per_day = 100
 
-max_allowable_time_delta = 60 # seconds
+max_allowable_time_delta = 90 # seconds
 
 
 def code(n):
@@ -216,4 +213,3 @@ print("Loading server...")
 with open("./libraries/server.py") as server_module:
 	cmd = server_module.read()
 exec(cmd)
-

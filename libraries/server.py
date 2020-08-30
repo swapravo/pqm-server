@@ -21,17 +21,36 @@ class Server(object):
 
 			conn, address = self.socket.accept()
 
-			if blocked_ips.exists(ip(conn)):
-				self.logger.debug("Dropping connection from: ", ip(conn))
+			#print("\nconnection: ", conn)
+			#print("address: ", address)
+
+			# checking it in this particular order is important
+			# assmuming address = (IP, port)
+
+			client = address[0]+':'+str(address[1])
+
+			if blacklist.exists(client):
+				self.logger.debug("Dropping connection from: ", address)
 				conn.shutdown(SHUT_RDWR)
 				conn.close()
 
-			self.logger.debug("Got connection!")
-			process = multiprocessing.Process(target=handler, args=(conn, address))
-			process.daemon = True
-			process.start()
-			self.logger.debug("Started process %r", process)
+			elif client_data := authenticated_clients.exists(client):
+				self.logger.debug("Got connection!")
+				process = multiprocessing.Process(target=handler, args=(conn, address, True))
+				process.daemon = True
+				process.start()
+				self.logger.debug("Started process %r", process)
 
+			elif blacklist.exists(address[0]):
+				self.logger.debug("Dropping connection from: ", address)
+				conn.shutdown(SHUT_RDWR)
+				conn.close()
+
+			else:
+				self.logger.debug("Got connection!")
+				process = multiprocessing.Process(target=handler, args=(conn, address, False))
+				process.daemon = True
+				process.start()
 
 
 basicConfig(level=DEBUG)

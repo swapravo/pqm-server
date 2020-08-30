@@ -2,4 +2,6 @@
 ccr
 backups
 dependencies
-
+*temp*
+*.qmek
+*.qmsk
