@@ -12,3 +12,4 @@ TODO List
 8. Looks into Message Size correlation attacks. Look into padding based attacks.
 9. During Singup, do check if the user's public keys already exist in our key repository or not.
 10. Ask the user if he wants to recieve mails from unknown users or not -> create a list of email addresses from which he does want to recieve mails from.
+11. Look into bot detection seriously!

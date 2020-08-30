@@ -1,39 +1,28 @@
+'''
 def ip(connection):
 	#print("IP: ", connection.getsockname())
 	return connection.getsockname()[0]
 
-
-def assign_buffer(ip_address):
-	if not unauthenticated_clients.exists(ip_addresss):
-
-		# ip_address, number_of_requests_made, buffer_size_allocated
-		with unauthenticated_clients.pipeline() as pipeline:
-			pipeline.lpush(ip_address, buffer_sizes[0], 1)
-			pipeline.expire(ip_address, unauthenticated_clients_time_to_live)
-			pipeline.execute()
-
-			# dont make another redis call. do it manually :/
-			return buffer_sizes[0]
-
-	else:
-		
-
-
-def assign_buffer(ip_address):
+def assign_buffer2(ip_address):
 
 	"""
-	This fn allows an attacker on the same network as a normal user (with the same public IP) access
-	to a buffer that was assigned for the normal user! He can also get the normal user blocked by DoSing
-	our server! Find a way to uniquely identify differnt users on the sawe network!
+	This fn allows an attacker on the same network as a normal user (with the
+	same public IP) access to a buffer that was assigned for the normal user!
+	He can also get the normal user blocked by DoSing our server! Find a way
+	to uniquely identify differnt users on the sawe network!
 	"""
 
 
 	data = authenticated_clients.hgetall(ip_address)
 
-	# rolling_ID
-	# {0: rolling_authenticated_token, 1: symmetric_session_key, 2: username, 3: IP, 4: buffer_allocated
-	#  5: requests made in the last second, 6: requests made in the last minute, 7: requests made in the last hour,
-	#  9: requests made in the last day, 10: emails sent in the last hour, 11: emails sent in the last day}
+	"""
+	rolling_ID
+	{0: rolling_authenticated_token, 1: symmetric_session_key, 2: username,
+	3: IP, 4: buffer_allocated 5: requests made in the last second,
+	6: requests made in the last minute, 7: requests made in the last hour,
+	9: requests made in the last day, 10: emails sent in the last hour,
+	11: emails sent in the last day}
+	"""
 
 	if data:
 
@@ -42,9 +31,12 @@ def assign_buffer(ip_address):
 	else:
 		data = unauthenticated_clients.hgetall(ip_address)
 
-		# IP address
-		# {0: requests made in the last second, 1: requests in the last minute 2: requests made in the last hour
-		#  3: requests made in the last day, 4: buffer_size}
+		"""
+		IP address
+		{0: requests made in the last second, 1: requests in the last minute
+		2: requests made in the last hour 3: requests made in the last day,
+		4: buffer_size}
+		"""
 
 		if data:
 			if int(data[b'0']) > max_requests_per_second:
@@ -56,7 +48,7 @@ def assign_buffer(ip_address):
 
 			if int(data[b'1']) > max_requests_per_minute:
 				block(ip_address, block_minute)
-				# reset the counter
+				# reset the count
 				return 0
 			else:
 				# increase the counter
@@ -67,13 +59,6 @@ def assign_buffer(ip_address):
 				return 0
 			else:
 				# increase the counter
-
-
-
-
-def block(whom, time):
-	blacklist.set(whom, ex=time)
-
 
 def recieve2(connection, data_size)
 
@@ -91,7 +76,81 @@ def recieve2(connection, data_size)
 		fragments.append(chunk)
 
 	return b''.join(fragments)
+'''
 
+
+def block(whom, time):
+	blacklist.set(whom, ex=time)
+
+
+def assign_buffer(client, state):
+
+	def _process_query(client, pipeline):
+		pipeline.get(client+':requests_counter_0')
+		pipeline.get(client+':requests_counter_1')
+		pipeline.get(client+':requests_counter_2')
+		pipeline.get(client+':requests_counter_3')
+		pipeline.get(client+':requests_counter_4')
+		pipeline.get(client+':buffer')
+		client_data = list(map(lambda x: int(x) if x else 0, pipeline.execute()))
+
+		if client_data[0] > request_filter_0[0]:
+			block(client, request_filter_0[1])
+			print("Blocking client for ", request_filter_0[1], "seconds.")
+			return 0
+		else:
+			pipeline.incrby(client+':requests_counter_0', 1)
+			pipeline.expires(client+':requests_counter_0', request_filter_0[1])
+
+		if client_data[1] > request_filter_1[0]:
+			block(client, request_filter_1[1])
+			print("Blocking client for ", request_filter_1[1], "seconds.")
+			return 0
+		else:
+			pipeline.incrby(client+':requests_counter_1', 1)
+			pipeline.expires(client+':requests_counter_1', request_filter_1[1])
+
+		if client_data[2] > request_filter_2[0]:
+			block(client, request_filter_2[1])
+			print("Blocking client for ", request_filter_2[1], "seconds.")
+			return 0
+		else:
+			pipeline.incrby(client+':requests_counter_2', 1)
+			pipeline.expires(client+':requests_counter_2', request_filter_2[1])
+
+		if client_data[3] > request_filter_3[0]:
+			block(client, request_filter_3[1])
+			print("Blocking client for ", request_filter_3[1], "seconds.")
+			return 0
+		else:
+			pipeline.incrby(client+':requests_counter_3', 1)
+			pipeline.expires(client+':requests_counter_3', request_filter_3[1])
+
+		if client_data[4] > request_filter_4[0]:
+			block(client, request_filter_4[1])
+			print("Blocking client for ", request_filter_4[1], "seconds.")
+			return 0
+		else:
+			pipeline.incrby(client+':requests_counter_4', 1)
+			pipeline.expires(client+':requests_counter_4', request_filter_4[1])
+
+		if all(pipeline.execute()):
+			return client_data[5]
+		return 0
+
+	if state: # state is true if the ip+port is in the list authenticated_clients
+		with authenticated_clients.pipeline() as pipeline:
+			return _process_query(client, pipeline)
+
+	elif unauthenticated_clients.exists(client):
+		with unauthenticated_clients.pipeline() as pipeline:
+			return _process_query(client, pipeline)
+	else:
+		with unauthenticated_clients.pipeline() as pipeline:
+			pipeline.set(client, 0, ex=stranger_ttl)
+			pipeline.set(client+':buffer', buffer_sizes[0], ex=stranger_ttl)
+			pipeline.execute()
+		return buffer_sizes[0]
 
 def recieve(connection, data_size):
 
@@ -122,26 +181,22 @@ def recieve(connection, data_size):
 	return data[:total_recieved]
 
 
-def handler(connection, address):
+def handler(connection, address, state):
 
 	basicConfig(level=DEBUG)
 	logger = getLogger("process-%r" % (address,))
 
 	try:
-		debug("Connected %r at %r", connection, address)
+		debug("\tConnected %r at %r", connection, address)
 
-		# print(ip(connection))
+		data = memoryview(recieve(connection, assign_buffer(address[0] + ':' + str(address[1]), state)))
 
-		data = memoryview(recieve(connection, assign_buffer(ip(connection))))
-
-		#print("recived from the client: ", data.tobytes())
-		print("length of data: ",  data.nbytes)
-
-
+		# print("recived from the client: ", data.tobytes())
+		# print("length of data: ",  data.nbytes)
 		# print(assign_buffer(ip(connection)))
 
-		# close the socket if the cliet sends nothing
-		if data == b'':
+		# close the socket if the client sends nothing
+		if not data:
 			debug("Socket closed remotely!")
 			return
 
@@ -164,20 +219,18 @@ def handler(connection, address):
 				recieved_timestamp = plaintext[:timestamp_size]
 				if timedelta(timestamp(), recieved_timestamp) > max_allowable_time_delta:
 					print("TLE DETECTED!")
-					# TLE
 					return
 
 				recieved_nonce = plaintext[timestamp_size:timestamp_size+nonce_size]
 				# print("Reading supplied nonce...")
-				if recieved_nonce in active_nonces:
+				if nonce_tracker.exists(recieved_nonce):
 					# there is something fishy.
 					# block this user for a few minutes
-					block_user(address, connection)
+					print("Nonce collision Detected!")
+					block_user(address[0]+':'+str(address[1]), max_allowable_time_delta)
 					return
 				else:
-					# print("adding ", recieved_nonce, "to active_nonces")
-					active_nonces[recieved_nonce] = round(time()) + max_allowable_time_delta
-					# print("active nonces: " , active_nonces)
+					nonce_tracker.set(recieved_nonce, 0, ex=max_allowable_time_delta)
 
 				# check user request and outsource it to the necessary function
 				recieved_request = plaintext[timestamp_size+nonce_size:timestamp_size+nonce_size+request_size]
@@ -191,13 +244,14 @@ def handler(connection, address):
 					response_code = process_username_availability_request(username)
 
 					if response_code == invalid_username_code:
-						print("Blocking IP: ", ip(connection))
+						# This will happen only if the client sends a custom made message
+						print("Blocking IP: ", address[0])
 						# determine a method for dynamically increasing the duration
-						block_ip(ip(connection))
+						block(address[0], stranger_ttl)
 
 					elif response_code == username_not_found_code:
-						# promote his state in case he wants to signup
-						active_clients[ip(connection)] = 1
+						# increase the size of the buffer alloted to him
+						unauthenticated_clients.set(address[0]+':'+str(address[1])+':buffer', buffer_sizes[1])
 
 					# pack and send this response to the client
 					message = recieved_request.tobytes() + recieved_nonce.tobytes() + response_code
@@ -206,6 +260,7 @@ def handler(connection, address):
 
 					# ASSUMING ROLLING_PUBLIC_KEY HAS BEEN SANITIZED
 					# need to add this temporary key in order to encrypt messages with it
+					# use a RAMDISK for THIS
 					with open(user_home+ccr_folder+random_name, 'wb') as fo:
 						fo.write(rolling_public_key)
 
