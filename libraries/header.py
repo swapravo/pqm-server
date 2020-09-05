@@ -2,6 +2,7 @@ from redis import Redis
 from socket import SHUT_RDWR
 from os import urandom, remove
 from sys import byteorder
+from msgpack import packb as pack, unpackb as unpack
 from logging import basicConfig, info, exception, DEBUG, debug, getLogger
 from time import time
 from subprocess import Popen, PIPE
@@ -14,11 +15,9 @@ from pathlib import Path
 
 shutdown = ""
 
-asymmetric_byte = b'\xaa' #10101010
+signature_denoter = b'\xaa' #10101010
 
-symmetric_byte = b'U'     #01010101
-
-header_byte_size = 1
+hash_denoter = b'U'     #01010101
 
 server = "server"
 
@@ -29,8 +28,6 @@ server_port = 9000
 user_home = str(Path.home())+'/'
 
 ccr_folder = ".ccr/"
-
-version = "0.1"
 
 random_name_length = 16 # characters in hex
 
@@ -45,45 +42,21 @@ max_username_size = 64
 
 message_id_size = 2
 
-request_size = 2
+request_code_size = 2
 
-response_size = 2
+response_code_size = 2
 
 rolling_id_size = 8
 
 rolling_authentication_token_size = 32
 
-max_encryption_public_key_size = 2
-
-max_signature_public_key_size = 2
-
-# rolling_public_key_size = max_encryption_public_key_size + random_name_length
-
 key_fingerprint_size = 64
 
-max_address_list_size = 2
+max_address_list_size = 100
 
-bcc_address_list_size = 1
+username_availability_check_request_size = 1024 * 16 # THIS NEEDS TO BE TRIMMED
 
-cc_address_list_size = 1
-
-username_availability_check_request_size = 1024 * 13 # THIS NEEDS TO BE TRIMMED
-# 1 + nonce_size + max_username_size + request_size + rolling_public_key_size + hash_size
-
-username_availability_check_response_size = 1024 * 16 # THIS NEEDS TO BE TRIMMED
-
-signup_request_size = header_byte_size + nonce_size + max_username_size + request_size + max_encryption_public_key_size + max_signature_public_key_size
-
-signup_response_size = 1024 * 16 # THIS NEEDS TO BE TRIMMED
-
-# buffer sizes according to the 'state' of the client
-# (DMZ, signing_up,  logging_in, logged_in, sending_mail)
-buffer_sizes = (1024 ** 1 * 16, 1024 ** 1 * 20, 1024 ** 1 * 32, 1024 ** 1 * 32, 1024 ** 2 * 8) # THESE VALUES NEED TO BE TRIMMED
-
-# CHANGE THESE VALUES ACCORDING TO THE PLAN OF THE CLIENT
-
-
-# (number_of_queries, in_period_of_time = block_time (s))
+signup_request_size = 1024 ** 1 * 32
 
 stranger_ttl = 10 * 60
 
@@ -97,8 +70,9 @@ request_filter_3 = (400, 60*60)
 
 request_filter_4 = (2000, 60*60*12)
 
-max_emails_per_hour = 20
 
+# to be fetched from the database of clients!
+max_emails_per_hour = 20
 max_emails_per_day = 100
 
 max_allowable_time_delta = 90 # seconds
