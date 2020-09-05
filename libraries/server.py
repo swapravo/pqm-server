@@ -20,7 +20,7 @@ class Server(object):
 		while True:
 
 			conn, address = self.socket.accept()
-
+			conn.setblocking(True)
 			#print("\nconnection: ", conn)
 			#print("address: ", address)
 
@@ -36,7 +36,7 @@ class Server(object):
 
 			elif client_data := authenticated_clients.exists(client):
 				self.logger.debug("Got connection!")
-				process = multiprocessing.Process(target=handler, args=(conn, address, True))
+				process = multiprocessing.Process(target=handler, args=(conn, True))
 				process.daemon = True
 				process.start()
 				self.logger.debug("Started process %r", process)
@@ -48,7 +48,7 @@ class Server(object):
 
 			else:
 				self.logger.debug("Got connection!")
-				process = multiprocessing.Process(target=handler, args=(conn, address, False))
+				process = multiprocessing.Process(target=handler, args=(conn, False))
 				process.daemon = True
 				process.start()
 
