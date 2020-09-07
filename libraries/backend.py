@@ -87,17 +87,13 @@ def asymmetrically_decrypt(message, private_key_name):
 
 def username_validity_checker(username):
 
-	# check for curse words, commands, illegal symbols
-	if len(username) < 3 or len(username) > 128:
-		print("Username must be atleast four and less than 129 charcters.")
+	username = str(username, 'utf-8').lower()
+	# check for cuss words, commands, illegal symbols
+	if len(username) < 4 or len(username) > max_username_size:
 		return 1
 
-	username = username.lower()
 	allowed_characters = printable[:36] + '_.'
-	cleaned_username = ''.join(list(filter(lambda x: x in allowed_characters, username)))
 
-	if username != cleaned_username:
-		print("Illegal characters present. Allowed charcters: ", ' '.join(list(allowed_characters)))
+	if username != "".join(map(lambda x: x if x in allowed_characters else '', username)):
 		return 1
-
 	return 0
