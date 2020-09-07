@@ -84,7 +84,8 @@ def close(connection):
 	connection.close()
 
 def block(whom, time):
-	blacklist.set(whom, ex=time)
+	print("Blocking", whom, "for", time, "seconds!")
+	blacklist.set(whom, 0, ex=time)
 	close(connection)
 
 
@@ -101,7 +102,6 @@ def assign_buffer(client, auth):
 
 		if client_data[0] > request_filter_0[0]:
 			block(client, request_filter_0[1])
-			print("Blocking client for ", request_filter_0[1], "seconds.")
 			return 0
 		else:
 			pipeline.incrby(client+':requests_counter_0', 1)
@@ -109,7 +109,6 @@ def assign_buffer(client, auth):
 
 		if client_data[1] > request_filter_1[0]:
 			block(client, request_filter_1[1])
-			print("Blocking client for ", request_filter_1[1], "seconds.")
 			return 0
 		else:
 			pipeline.incrby(client+':requests_counter_1', 1)
@@ -117,7 +116,6 @@ def assign_buffer(client, auth):
 
 		if client_data[2] > request_filter_2[0]:
 			block(client, request_filter_2[1])
-			print("Blocking client for ", request_filter_2[1], "seconds.")
 			return 0
 		else:
 			pipeline.incrby(client+':requests_counter_2', 1)
@@ -125,7 +123,6 @@ def assign_buffer(client, auth):
 
 		if client_data[3] > request_filter_3[0]:
 			block(client, request_filter_3[1])
-			print("Blocking client for ", request_filter_3[1], "seconds.")
 			return 0
 		else:
 			pipeline.incrby(client+':requests_counter_3', 1)
@@ -133,7 +130,6 @@ def assign_buffer(client, auth):
 
 		if client_data[4] > request_filter_4[0]:
 			block(client, request_filter_4[1])
-			print("Blocking client for ", request_filter_4[1], "seconds.")
 			return 0
 		else:
 			pipeline.incrby(client+':requests_counter_4', 1)
@@ -169,7 +165,7 @@ def recieve(connection, max_payload_size):
 
 	data = bytearray(payload_size)
 	pos = 0
-	print("payload_size", payload_size)
+	#print("payload_size: ", payload_size)
 	total_recieved = 0
 	buffer_size = 4096
 
@@ -202,7 +198,8 @@ def handler(connection, auth):
 			# do version specific stuff after this
 
 			data = memoryview(recieve(connection, assign_buffer(ip + ':' + port, auth)))
-
+			#from hashlib import md5
+			#print(md5(data).hexdigest())
 			#print("recived from the client: ", data.tobytes())
 			# print("length of data: ",  data.nbytes)
 			# print(assign_buffer(ip(connection)))
@@ -215,20 +212,23 @@ def handler(connection, auth):
 
 			# if the message has a hash, verify it now
 			# elif its a signature note it down
-			if data[0] == hash_denoter:
-				recieved_hash = data[1:hash_size]
-				hash_ = _hash[1+hash_size:]
+			if bytes([data[0]]) == hash_denoter:
+				recieved_hash = data[1:1+hash_size].tobytes()
+				hash_ = _hash(data[1+hash_size:])
 				if recieved_hash != hash_:
+					print("Hash verification failed!!")
 					close(connection)
 					return
 				else:
 					del hash_, recieved_hash
-					data = data[1+hash_size]
-			elif data[0] == signature_denoter:
+					data = data[1+hash_size:]
+			elif bytes([data[0]]) == signature_denoter:
+				#print("sig den")
 				signature_size = int.from_bytes(data[1:3], byteorder='little')
-				signature = data[3:signature_size]
-				data = data[signature_size:]
+				signature = data[3:3+signature_size]
+				data = data[3+signature_size:]
 			else:
+				#print("garbage!", data[0])
 				continue
 
 			plaintext = asymmetrically_decrypt(data, encryption_key(server))
@@ -271,7 +271,6 @@ def handler(connection, auth):
 				if response_code == invalid_username_code:
 					# This will happen only if the client sends a message
 					# with illegal characters
-					print("Blocking IP: ", ip)
 					# determine a method for dynamically increasing the duration
 					block(ip, stranger_ttl)
 					return
@@ -281,8 +280,8 @@ def handler(connection, auth):
 					unauthenticated_clients.set(ip+':'+port+':buffer', signup_request_size)
 
 				# pack and send this response to the client
-				message = {"recieved_request": data["recieved_request"], \
-				"nonce": data["nonce"], "response_code": response_code}
+				message = {"recieved_request": plaintext["request_code"], \
+				"nonce": plaintext["nonce"], "response_code": response_code}
 
 				# print("Message: " , message)
 				random_name = random_name_generator()
