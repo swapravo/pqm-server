@@ -1,15 +1,12 @@
 def process_username_availability_request(username):
 
-	#print("In process user avail req")
-	print(username)
-
 	print("SANITIZE INPUT!")
 
-	if username_validity_checker(str(username, 'utf-8')) == 1:
+	if username_validity_checker(username) == 1:
 		# a normal client would have checked the username.
 		# the user is probably forging messges.
 		# BLOCK him!
-		return username_invalid_code
+		return invalid_username_code
 
 	# save the keys in a secure DB or something
 	print("BYPASSING USERNAME AVAIL CHECK")
