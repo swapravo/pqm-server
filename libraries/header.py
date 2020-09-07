@@ -15,9 +15,9 @@ from pathlib import Path
 
 shutdown = ""
 
-signature_denoter = b'\xaa' #10101010
+signature_denoter = b'\x00' #10101010
 
-hash_denoter = b'U'     #01010101
+hash_denoter = b'\xff'     #01010101
 
 server = "server"
 
