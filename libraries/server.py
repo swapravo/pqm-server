@@ -14,13 +14,14 @@ class Server(object):
 
 		self.logger.debug("listening")
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.socket.bind((self.hostname, self.port))
 		self.socket.listen(1)
 
 		while True:
 
 			conn, address = self.socket.accept()
-			conn.setblocking(True)
+			#conn.setblocking(True)
 			#print("\nconnection: ", conn)
 			#print("address: ", address)
 
