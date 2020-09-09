@@ -1,65 +1,4 @@
 '''
-def ip(connection):
-	#print("IP: ", connection.getsockname())
-	return connection.getsockname()[0]
-
-def assign_buffer2(ip_address):
-
-	"""
-	This fn allows an attacker on the same network as a normal user (with the
-	same public IP) access to a buffer that was assigned for the normal user!
-	He can also get the normal user blocked by DoSing our server! Find a way
-	to uniquely identify differnt users on the sawe network!
-	"""
-
-
-	data = authenticated_clients.hgetall(ip_address)
-
-	"""
-	rolling_ID
-	{0: rolling_authenticated_token, 1: symmetric_session_key, 2: username,
-	3: IP, 4: buffer_allocated 5: requests made in the last second,
-	6: requests made in the last minute, 7: requests made in the last hour,
-	9: requests made in the last day, 10: emails sent in the last hour,
-	11: emails sent in the last day}
-	"""
-
-	if data:
-
-		# do stuff
-
-	else:
-		data = unauthenticated_clients.hgetall(ip_address)
-
-		"""
-		IP address
-		{0: requests made in the last second, 1: requests in the last minute
-		2: requests made in the last hour 3: requests made in the last day,
-		4: buffer_size}
-		"""
-
-		if data:
-			if int(data[b'0']) > max_requests_per_second:
-				block(ip_address, block_second) # or the username???
-				# reset the counter
-				return 0
-			else:
-				#increase this counter by 1
-
-			if int(data[b'1']) > max_requests_per_minute:
-				block(ip_address, block_minute)
-				# reset the count
-				return 0
-			else:
-				# increase the counter
-
-			if int(data[b'2']) > max_requests_per_hour:
-				block(ip_address, block_hour)
-				#reset the counter
-				return 0
-			else:
-				# increase the counter
-
 def recieve2(connection, data_size)
 
 	if not data_size:
@@ -263,11 +202,9 @@ def handler(connection, auth):
 			if recieved_request == username_availability_check_code:
 
 				username = plaintext["username"]
-
 				rolling_public_key = plaintext["rolling_public_key"]
 
 				response_code = process_username_availability_request(username)
-
 				if response_code == invalid_username_code:
 					# This will happen only if the client sends a message
 					# with illegal characters
@@ -280,50 +217,58 @@ def handler(connection, auth):
 					unauthenticated_clients.set(ip+':'+port+':buffer', signup_request_size)
 
 				# pack and send this response to the client
-				message = {"recieved_request": plaintext["request_code"], \
-				"nonce": plaintext["nonce"], "response_code": response_code}
-
-				# print("Message: " , message)
+				message = {"nonce": plaintext["nonce"], "response_code": response_code}
 				random_name = random_name_generator()
-
-				# ASSUMING ROLLING_PUBLIC_KEY HAS BEEN SANITIZED
-				# need to add this temporary key in order to encrypt messages with it
-				# use a RAMDISK for THIS
-				with open(user_home+ccr_folder+random_name, 'wb') as fo:
-					fo.write(rolling_public_key)
-
-				execute("./libraries/ccr -i -R " + user_home+ccr_folder+random_name + " --name " + random_name)
-				#print("ran name: ", random_name)
-				ciphertext = asymmetrically_encrypt(pack(message, use_bin_type=True), random_name)
-				#print("Ciphertext: ", ciphertext)
-				remove(user_home+ccr_folder+random_name)
-				ciphertext = _hash(ciphertext) + ciphertext
-
-				response = (len(ciphertext)).to_bytes(4, byteorder='little') + ciphertext
-				connection.sendall(response)
+				asymmetrically_respond(connection, message, rolling_public_key, random_name)
 				print("REQUEST PROCESSED SUCCESSFULLY!")
 				continue
 
 			elif recieved_request == signup_code:
 				print("IN SIGNUP")
-				username = plaintext[timestamp_size+request_size:timestamp_size+request_size+max_username_size].tobytes().lstrip(b'\x00')
+				#check whether username, pk1, pk2 exist in db or not
+				response_code = process_signup_request(username, \
+					plaintext["encryption_public_key"], plaintext["signature_public_key"])
+				if response_code == invalid_signup_credentials:
+					block(ip, stranger_ttl)
+					return
+				elif response_code == signup_successful_code:
+					message = {"nonce": plaintext["nonce"], "response_code": response_code}
 
-				encryption_public_key_size = int.from_bytes(plaintext[timestamp_size+request_size+max_username_size: \
-								timestamp_size+request_size+max_username_size+max_encryption_public_key_size], byteorder='little')
+				asymmetrically_respond(connection, message, rolling_public_key, random_name)
+				continue
 
-				encryption_public_key = plaintext[timestamp_size+request_size+max_username_size+max_encryption_public_key_size: \
-								timestamp_size+request_size+max_username_size+max_encryption_public_key_size+encryption_public_key_size]
+			elif recieved_request == login_step_1_code:
+				print("IN LOGIN STEP 1")
+				#user = message["user_id"]
+				#signature = message["signature"]
+				#fetch user's sig pub key and validate signature
+				if verify_signature(signature_public_key, signature):
+					message = {"nonce": plaintext["nonce"], "response_code": okay_code}
+					random_name = random_name_generator()
+					asymmetrically_respond(connection, message, rolling_public_key, random_name)
+					continue
+				else:
+					block(ip, false_signature_block_time)
+					return
 
-				signature_public_key_size = int.from_bytes(plaintext[timestamp_size+request_size+max_username_size+max_encryption_public_key_size+ \
-								encryption_public_key_size: timestamp_size+request_size+max_username_size+max_encryption_public_key_size+ \
-								encryption_public_key_size+max_signature_public_key_size], byteorder='little')
+			elif recieved_request == login_step_2_code:
+				print("IN LOGIN STEP 2")
+				#user = message["user_id"]
+				#signature = message["signature"]
+				#fetch user's sig pub key and validate signature
 
-				signature_public_key =  plaintext[timestamp_size+request_size+max_username_size+max_encryption_public_key_size+\
-								encryption_public_key_size+max_signature_public_key_size: \
-								timestamp_size+request_size+max_username_size+max_encryption_public_key_size+ \
-								encryption_public_key_size+max_signature_public_key_size+signature_public_key_size]
-
-				process_signup_request(username, encryption_public_key, signature_public_key)
+				if verify_signature(signature_public_key, signature):
+					message = {"nonce": plaintext["nonce"], "response_code": okay_code}
+					random_name = random_name_generator()
+					asymmetrically_respond(connection, message, random_name)
+					continue
+				else:
+					block(ip, false_signature_block_time)
+					return
+			else:
+				# LOOKS LIKE SOMEONE IS SENDING WRONG REQUEST CODES
+				block(ip+':'+port, max_allowable_time_delta)
+				return
 
 
 	except:
