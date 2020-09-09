@@ -14,5 +14,6 @@ def process_username_availability_request(username):
 	return username_not_found_code # OR username_foun_code
 
 
-def signup(username, encryption_public_key, signature_public_key):
+def process_signup_request(username, encryption_public_key, signature_public_key):
 	print(" make sure the keys are SANITIZED!")
+	return signup_successful_code
