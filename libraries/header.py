@@ -55,19 +55,16 @@ key_fingerprint_size = 64
 max_address_list_size = 100
 
 username_availability_check_request_size = 1024 * 16 # THIS NEEDS TO BE TRIMMED
-
 signup_request_size = 1024 ** 1 * 32
+login_request_size = 1024 ** 1 * 32
 
+false_signature_block_time = 60 * 60
 stranger_ttl = 10 * 60
 
 request_filter_0 = (4, 10)
-
 request_filter_1 = (20, 60)
-
 request_filter_2 = (200, 60*15)
-
 request_filter_3 = (400, 60*60)
-
 request_filter_4 = (2000, 60*60*12)
 
 
@@ -85,60 +82,47 @@ def code(n):
 print("THESE CODES ARE TEMPORARY!!!")
 
 
-not_found_code = code(1)
+decryption_failure_code = code(1)
 
-forbidden_code = code(2)
+login_step_1_code = code(2)
 
-failure_code = code(3)
+login_step_2_code = code(3)
 
-decryption_failure_code = code(4)
+time_limit_exceeded_code = code(4)
 
-login_step_1_code = code(5)
+username_not_found_code = code(5)
 
-login_step_2_code = code(6)
+username_found_code = code(6)
 
-time_limit_exceeded_code = code(7)
+update_mailbox_code = code(7)
 
-username_not_found_code = code(8)
+delete_email_code = code(8)
 
-username_found_code = code(9)
+shred_mailbox_code = code(9)
 
-nonce_verification_failed_code = code(10)
+close_account_code = code(10)
 
-email_upcoming_code = code(11)
+logout_code = code(11)
 
-is_an_email_code = code(12)
+logout_successful_code = code(12)
 
-update_mailbox_code = code(13)
+logout_failed_code = code(13)
 
-delete_message_code = code(14)
+get_public_keys = code(14)
 
-shred_mailbox_code = code(15)
+signup_code = code(15)
 
-close_account_code = code(16)
+username_availability_check_code = code(16)
 
-close_account_successful_code = code(17)
+no_changes_in_mailbox = code(17)
 
-close_account_failed = code(18)
+invalid_username_code = code(18)
 
-logout_code = code(19)
+signup_successful_code = code(19)
 
-logout_successful_code = code(20)
+invalid_signup_credentials = code(20)
 
-logout_failed_code = code(21)
-
-download_public_keys = code(22)
-
-fetch_public_keys_code = code(23)
-
-signup_code = code(24)
-
-username_availability_check_code = code(25)
-
-no_changes_in_mailbox = code(26)
-
-invalid_username_code = code(27)
-
+okay_code = code(21)
 
 print("\nLoading modules...\n")
 
@@ -170,13 +154,11 @@ exec(cmd)
 del network_manager_module
 print("Network manager loaded...")
 
-
 #with open("./libraries/scheduler.py") as scheduler_module:
 #	cmd = scheduler_module.read()
 #exec(cmd)
 #del scheduler_module
 #print("Scheduler loaded...")
-
 
 with open("./libraries/shutdown.py") as shutdown_module:
 	shutdown = compile(shutdown_module.read(), '<string>', 'exec')
