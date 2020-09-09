@@ -44,7 +44,6 @@ def execute(command):
 	return (out, err)
 
 
-
 def key_fingerprint(keyname):
 
 	if keyname[-2] == 'p':
@@ -57,7 +56,6 @@ def key_fingerprint(keyname):
 	out, err = execute("./libraries/ccr -" + mode + " --fingerprint -F " + keyname)
 
 	if err: return 1
-
 	return bytes.fromhex(''.join(str(out[-81:-2], 'utf-8').split(':')))
 
 
@@ -68,8 +66,8 @@ def asymmetrically_encrypt(message, public_key_name):
 	process.terminate()
 
 	#codecrypt returns a None if the encryption is successful
-	assert returned_data[1] == None
-
+	if returned_data[1] != None:
+		return 1
 	return returned_data[0]
 
 
@@ -83,6 +81,33 @@ def asymmetrically_decrypt(message, private_key_name):
 	if returned_data[0] == b'':
 		return 1
 	return returned_data[0]
+
+
+def asymmetrically_respond(connection, message, key, key_name):
+
+	# ASSUMING ROLLING_PUBLIC_KEY HAS BEEN SANITIZED
+	# need to add this temporary key in order to encrypt messages with it
+	# use a RAMDISK for THIS
+	with open(user_home+ccr_folder+key_name, 'wb') as fo:
+		fo.write(key)
+
+	#make sure these get executed
+	# include the try catches
+	execute("./libraries/ccr -i -R " + user_home+ccr_folder+key_name + " --name " + key_name)
+	ciphertext = asymmetrically_encrypt(pack(message, use_bin_type=True), key_name)
+	remove(user_home+ccr_folder+key_name)
+
+	ciphertext = _hash(ciphertext) + ciphertext
+	response = (len(ciphertext)).to_bytes(4, byteorder='little') + ciphertext
+
+	# insert timeout here!
+	connection.sendall(response)
+
+
+def verify_signature(signature_public_key, signature):
+
+	print("SKIPPING SIGNATURE VERIFICATION!")
+	return True
 
 
 def username_validity_checker(username):
