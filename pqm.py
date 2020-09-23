@@ -1,3 +1,3 @@
-from libraries.header import *
+import src.server
 
-
+src.server.main()
