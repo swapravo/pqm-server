@@ -1,3 +1,4 @@
+[![DeepSource](https://deepsource.io/gh/swapravo/pqm-server.svg/?label=active+issues&show_trend=true&token=YEU1u4u2s68EHr6SUxVPxQ-Q)](https://deepsource.io/gh/swapravo/pqm-server/?ref=repository-badge)
 [![BCH compliance](https://bettercodehub.com/edge/badge/swapravo/pqm-server?branch=master&token=5d17560aaa002263478361bfe997c1ad6ce421b6)](https://bettercodehub.com/)
 [![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/10175)
 
