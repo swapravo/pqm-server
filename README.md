@@ -1,3 +1,5 @@
+[![BCH compliance](https://bettercodehub.com/edge/badge/swapravo/pqm-server?branch=master&token=5d17560aaa002263478361bfe997c1ad6ce421b6)](https://bettercodehub.com/)
+
 # pqm-server
 
 TODO List
