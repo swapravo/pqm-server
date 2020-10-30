@@ -36,12 +36,16 @@ def hash(message):
 	return blake2b(message, digest_size=src.globals.HASH_SIZE).digest()
 
 
-# # BUG: NOT TESTED
-def validate_key(key):
+def validate_key(key, key_is_public=True):
+	if key_is_public:
 	# for public keys
-	out, err = src.util.execute("./src/ccr -n -y -i " + src.utils.random_name_generator(), key)
+		out, err = execute("./ccr -n -i --name " + "k1", key)
 	# for private keys
-	out, err = src.util.execute("./src/ccr -n -y -I " + src.utils.random_name_generator(), key)
+	else:
+		out, err = execute("./ccr -n -I --name " + "k2",  key)
+	if err:
+		return False
+	return True
 
 
 def insert_public_key(key, keyname):
