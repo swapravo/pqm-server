@@ -1,3 +1,4 @@
+from msgpack import packb, unpackb
 from os import urandom
 from time import time
 from subprocess import Popen, PIPE
@@ -6,6 +7,18 @@ from sys import byteorder
 
 
 import src.globals
+
+
+def pack(message):
+	return packb(message, use_bin_type=True)
+
+
+def unpack(message):
+	try:
+		return unpackb(message, raw=False)
+	except:
+		print("Invalid message! Message unpacking FAILED!")
+		return 1
 
 
 def random_name_generator(length=src.globals.RANDOM_NAME_LENGTH):
@@ -36,11 +49,12 @@ def execute(command, data=None):
 
 	process.terminate()
 	out = err = 0
-	if returned_data[0] == b'' or returned_data[0] == None:
+	# if returned_data[0] == b'' or returned_data[0] == None:
+	if not returned_data[0]:
 		out = 0
 	else:
 		out = returned_data[0]
-	if returned_data[1] == b'' or returned_data[1] == None:
+	if not returned_data[1]:
 		err = 0
 	else:
 		err = returned_data[1]
@@ -57,5 +71,5 @@ def username_validity_checker(username):
 	allowed_characters = printable[:36] + '_.'
 
 	if username != "".join(map(lambda x: x if x in allowed_characters else '', username)):
-		return 1
-	return 0
+		return False
+	return True
