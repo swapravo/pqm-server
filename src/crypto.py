@@ -15,15 +15,6 @@ def nonce(size=src.globals.NONCE_SIZE):
 	return urandom(size)
 
 
-def insert_public_key(key, keyname):
-	out, err = src.utils.execute("./src/ccr -y -i --name " + keyname, key)
-	if err or out:
-		print("Public key insertion FAILED!")
-		print(out, err)
-		return 1
-	return 0
-
-
 def encryption_key(username):
 	return username + ".qmek"
 
@@ -49,6 +40,7 @@ def validate_key(key, key_is_public=True):
 def insert_public_key(key, keyname):
 	out, err = src.utils.execute("./src/ccr -y -i --name " + keyname, key)
 	if err or out:
+		print("Public key insertion FAILED!")
 		return 1
 	return 0
 
