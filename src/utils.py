@@ -31,7 +31,7 @@ def timestamp():
 
 
 def timedelta(timestamp1, timestamp2):
-	delta = int.from_bytes(timestamp1, byteorder='little') -
+	delta = int.from_bytes(timestamp1, byteorder='little') - \
 		int.from_bytes(timestamp2, byteorder='little')
 	if delta < 0:
 		return -delta

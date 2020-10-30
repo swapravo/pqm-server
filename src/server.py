@@ -6,7 +6,7 @@ import src.requests
 import src.db
 
 
-class Server(object):
+class Server():
 	def __init__(self, hostname, port):
 		self.hostname = hostname
 		self.port = port

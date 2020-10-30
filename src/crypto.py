@@ -29,12 +29,15 @@ def hash(message):
 
 def validate_key(key, key_is_public=True):
 	if key_is_public:
-		out, err = execute("./ccr -n -i --name " + "k1", key)
+		out, err = execute("./ccr -n -i --name " + \
+			src.utils.random_name_generator(), key)
 	else:
-		out, err = execute("./ccr -n -I --name " + "k2",  key)
+		out, err = execute("./ccr -n -I --name " + \
+			src.utils.random_name_generator(),  key)
 	if err:
 		return False
-	return True
+	if out:
+		return True
 
 
 def insert_public_key(key, keyname):

@@ -215,7 +215,7 @@ def process(connection):
 		# kill process here
 
 	if src.utils.timedelta(src.utils.timestamp(), request["timestamp"]) > \
-		src.globals.MAX_ALLOWABLE_TIME_DELTA or src.db.nonces.exists(request["nonce"])
+		src.globals.MAX_ALLOWABLE_TIME_DELTA or src.db.nonces.exists(request["nonce"]):
 
 		# should i block this user for a few minutes
 		# or just close the connection
