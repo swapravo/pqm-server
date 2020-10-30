@@ -17,10 +17,10 @@ def username_availability_check(connection, request):
 	"""
 
 	try:
-		if not ( \
-			instanceof(request["username"], str) and \
-			src.utils.username_validity_checker(request["username"]) and \
-			instanceof(request["rolling_public_key"], bytes) and \
+		if not (
+			instanceof(request["username"], str) and
+			src.utils.username_validity_checker(request["username"]) and
+			instanceof(request["rolling_public_key"], bytes) and
 			src.crypto.validate_key(request["rolling_public_key"])):
 
 			src.network.block(connection)
@@ -60,12 +60,12 @@ def signup(connection, request):
 	"""
 
 	try:
-		if not ( \
-			instanceof(request["username"], str) and \
-			src.utils.username_validity_checker(request["username"]) and \
-			instanceof(request["encryption_public_key"], bytes) and \
-			src.crypto.validate_key(request["encryption_public_key"]) and \
-			instanceof(request["signature_public_key"], bytes) and \
+		if not (
+			instanceof(request["username"], str) and
+			src.utils.username_validity_checker(request["username"]) and
+			instanceof(request["encryption_public_key"], bytes) and
+			src.crypto.validate_key(request["encryption_public_key"]) and
+			instanceof(request["signature_public_key"], bytes) and
 			src.crypto.validate_key(request["signature_public_key"])):
 
 			src.network.block(connection)
@@ -147,8 +147,9 @@ def process(connection):
 
 	# validating supplied data here
 	try:
-		if not (instanceof(request["vesion"], int) and \
-			(request["token"]["type"] == "hash" or request["token"]["type"] == "sign") and \
+		if not (instanceof(request["vesion"], int) and
+			(request["token"]["type"] == "hash" or
+			request["token"]["type"] == "sign") and
 			instanceof(request["request"], bytes)):
 			src.network.block(connection)
 			return
@@ -198,10 +199,12 @@ def process(connection):
 	"""
 
 	try:
-		if not (len(request["timestamp"]) == 4 and \
+		if not (len(request["timestamp"]) == 4 and
 			# and request_code is a valid code
-			instanceof(request["request_code"], bytes) and len(request["request_code"]) == 2 and \
-			instanceof(request["request_code"], bytes) and len(request["request_code"]) == sc.globals.NONCE_SIZE and \
+			instanceof(request["request_code"], bytes) and
+			 len(request["request_code"]) == 2 and
+			instanceof(request["request_code"], bytes) and
+			len(request["request_code"]) == sc.globals.NONCE_SIZE and
 			instanceof(request["request"], dict)):
 			src.network.block(connection)
 			return

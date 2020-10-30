@@ -28,13 +28,19 @@ class Server(object):
 				conn.close()
 
 			elif src.db.authenticated_clients.exists(client):
-				 # if a client on this (IP : PORT) got disconnected somehow and wants to reconnect now
+				"""
+				 if a client on this (IP : PORT) got disconnected somehow and
+				 wants to reconnect now
+				"""
 				process = multiprocessing.Process(target=src.requests.reconnect, args=(conn,))
 				process.daemon = True
 				process.start()
 
 			elif src.db.blacklist.exists(address[0]):
-				# if a client has launched multiple instances from (IP : XXXX) and is misbehaving
+				"""
+				if a client has launched multiple instances from (IP : XXXX) and
+				is misbehaving
+				"""
 				conn.shutdown(socket.SHUT_RDWR)
 				conn.close()
 
@@ -43,6 +49,7 @@ class Server(object):
 				process = multiprocessing.Process(target=src.requests.authenticte, args=(conn,))
 				process.daemon = True
 				process.start()
+
 
 def main():
 	server_ = Server("0.0.0.0", 9000)

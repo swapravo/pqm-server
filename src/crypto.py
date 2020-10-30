@@ -3,7 +3,7 @@ from os.path import isfile
 from sys import byteorder
 from hashlib import blake2b
 from nacl.pwhash.argon2id import kdf
-from nacl.secret import SecretBox #xsalsa20poly1305
+from nacl.secret import SecretBox #  xsalsa20poly1305
 from nacl.utils import random as nacl_random
 
 
@@ -38,9 +38,7 @@ def hash(message):
 
 def validate_key(key, key_is_public=True):
 	if key_is_public:
-	# for public keys
 		out, err = execute("./ccr -n -i --name " + "k1", key)
-	# for private keys
 	else:
 		out, err = execute("./ccr -n -I --name " + "k2",  key)
 	if err:
@@ -49,14 +47,14 @@ def validate_key(key, key_is_public=True):
 
 
 def insert_public_key(key, keyname):
-	out, err =src.utils.execute("./src/ccr -y -i --name " + keyname, key)
+	out, err = src.utils.execute("./src/ccr -y -i --name " + keyname, key)
 	if err or out:
 		return 1
 	return 0
 
 
 def remove_public_key(keyname):
-	out, err =src.utils.execute("./src/ccr -y -x " + keyname)
+	out, err = src.utils.execute("./src/ccr -y -x " + keyname)
 	if err or out:
 		return 1
 	return 0
@@ -92,7 +90,8 @@ def key_fingerprint(keyname):
 		return 1
 
 	out, err = src.utils.execute("./src/ccr -" + mode + " --fingerprint -F " + keyname)
-	if err: return 1
+	if err:
+		return 1
 	return bytes.fromhex(''.join(str(out[-81:-2], 'utf-8').split(':')))
 
 
@@ -124,7 +123,8 @@ def asymmetrically_encrypt(message, key):
 		out |= _out
 		err |= _err
 
-	if err: return 1
+	if err:
+		return 1
 	return out
 
 
@@ -132,7 +132,8 @@ def asymmetrically_decrypt(message, private_key_name):
 
 	out, err = src.utils.execute("./src/ccr -d -r " + private_key_name, message)
 
-	if err: return 1
+	if err:
+		return 1
 	return out
 
 
@@ -140,7 +141,8 @@ def sign(message, recipient_name):
 
 	out, err = src.utils.execute("./src/ccr -s -r " + recipient_name, message)
 
-	if err: return 1
+	if err:
+		return 1
 	return out
 
 
@@ -153,7 +155,8 @@ def verify_signature(signature):
 	# and not a signature verification failure
 	# try forging a signature to see what it returns
 
-	if err or not out: return 1
+	if err or not out:
+		return 1
 	return 0
 
 
@@ -178,7 +181,7 @@ def asymmetrically_respond(connection, message, key, key_name):
 	with open(src.globals.USER_HOME+src.globals.CCR_FOLDER+key_name, 'wb') as fo:
 		fo.write(key)
 
-	#make sure these get executed
+	# make sure these get executed
 	# include the try catches
 	src.utils.execute("./src/ccr -i -R " + src.globals.USER_HOME + src.globals.CCR_FOLDER + key_name + " --name " + key_name)
 	ciphertext = asymmetrically_encrypt(src.utils.pack(message), key_name)
