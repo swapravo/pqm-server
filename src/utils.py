@@ -4,9 +4,14 @@ from time import time
 from subprocess import Popen, PIPE
 from string import printable
 from sys import byteorder
-
+from shlex import split, quote
 
 import src.globals
+
+
+def sizeof(message):
+	#with 4 bytes you can represent upto 32 GiB
+	return (len(message)).to_bytes(4, byteorder='little')
 
 
 def pack(message):
@@ -50,12 +55,11 @@ def execute(command, data=None):
 
 	process.terminate()
 	out = err = 0
-	# if returned_data[0] == b'' or returned_data[0] == None:
-	if not returned_data[0]:
+	if returned_data[0] == b'' or returned_data[0] is None:
 		out = 0
 	else:
 		out = returned_data[0]
-	if not returned_data[1]:
+	if returned_data[1] == b'' or returned_data[1] is None:
 		err = 0
 	else:
 		err = returned_data[1]
@@ -64,7 +68,8 @@ def execute(command, data=None):
 
 def username_validity_checker(username):
 
-	username = str(username, 'utf-8').lower()
+	if not isinstance(username, str):
+		username = str(username, 'utf-8').lower()
 	# check for cuss words, commands, illegal symbols
 	if len(username) < 4 or len(username) > src.globals.MAX_USERNAME_SIZE:
 		return 1
