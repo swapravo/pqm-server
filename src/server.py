@@ -22,6 +22,8 @@ class Server():
 			conn, address = self.socket.accept()
 			client = address[0] + ':' + str(address[1])
 
+			print(client)
+
 			if src.db.blacklist.exists(client):
 				 # if a specific instance on this (IP : PORT) is misbehaving
 				conn.shutdown(socket.SHUT_RDWR)
@@ -46,7 +48,7 @@ class Server():
 
 			else:
 				# if it is a new client trying to connect to the sevice
-				process = multiprocessing.Process(target=src.requests.authenticte, args=(conn,))
+				process = multiprocessing.Process(target=src.requests.process, args=(conn,))
 				process.daemon = True
 				process.start()
 
