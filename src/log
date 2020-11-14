@@ -1,0 +1,23 @@
+Server Log:
+
+Status:
+    Accepts incoming connections, checks if they exist
+        in a list of blocked users, ACCEPTS them nevertheless (dev feature),
+    Decrypts asymmetric requests, validates timestamps, nonces, datatypes
+        and data fields.
+    Entertains username availability checks and signup requests.
+
+TODO:
+    Setup and secure a Postgres backend
+    Should we replace the request/response codes with the string equivalents
+        of the same?
+    Find a way to kill processes once they are done processing a request
+    Find a better way to block connections:
+        Currently, we use IPs / IP+port.
+        Blocking IPs would block a lot of people, in case of
+            a shared network like an office.
+        Blocking IP+port would create conflicts with other
+            users on the same network in case the client
+            starts up on the same port
+    Find a robust way to remove keys that are written to the
+        server's keyring: -> should we modify Codecrypt?
