@@ -9,23 +9,37 @@ def close(connection):
 	connection.close()
 
 
-def block(whom, time):
-	# takes an ip or ip:port
-	print("Blocking ", whom, "for ", time, "seconds!")
-	src.db.blacklist.set(whom, 0, ex=time)
+def block(connection, time, block_ip_and_port=True):
+
+	ip, port = connection.getpeername()
+	port = str(port)
+
+	if block_ip_and_port:
+		print("Blocked ", ip, port, "for", time, " seconds.")
+		src.db.blacklist.set(ip + ':' + port, 0, ex=time)
+	else:
+		print("Blocked ", ip, "for ", time)
+		src.db.blacklist.set(ip, 0, ex=time)
 	close(connection)
 
 
 def recieve(connection, max_payload_size):
+
 	if max_payload_size == 0:
-		return b''
+		close(connection)
+		src.shutdown.process()
 
 	payload_size = int.from_bytes(connection.recv(4), byteorder='little')
+
 	if payload_size == 0:
-		return b''
-	elif payload_size > max_payload_size:
+		print("Dropping Undersized request!")
 		close(connection)
-		return b''
+		src.shutdown.process()
+
+	elif payload_size > max_payload_size:
+		print("Dropping Oversized request!")
+		close(connection)
+		src.shutdown.process()
 
 	data = bytearray(payload_size)
 	pos = 0
