@@ -22,8 +22,8 @@ def unpack(message):
 	try:
 		return unpackb(message, raw=False)
 	except:
-		print("Invalid message! Message unpacking FAILED!")
-		return 1
+		print("Invalid message! Unpacking message FAILED!")
+		return None
 
 
 def random_name_generator(length=src.globals.RANDOM_NAME_LENGTH):
@@ -44,38 +44,36 @@ def timedelta(timestamp1, timestamp2):
 
 
 def execute(command, data=None):
-    # SANITIZE command
+    # SANITIZE commands here
 
+	process = Popen([command], shell=True, stdout=PIPE, stdin=PIPE)
 	if data:
-		process = Popen([command], shell=True, stdout=PIPE, stdin=PIPE)
 		returned_data = process.communicate(input=data)
 	else:
-		process = Popen([command], shell=True, stdout=PIPE, stderr=PIPE)
 		returned_data = process.communicate()
-
 	process.terminate()
-	out = err = 0
-	if returned_data[0] == b'' or returned_data[0] is None:
-		out = 0
-	else:
+
+	out, err = None, None
+	if returned_data[0]:
 		out = returned_data[0]
-	if returned_data[1] == b'' or returned_data[1] is None:
-		err = 0
-	else:
+	if returned_data[1]:
 		err = returned_data[1]
 	return (out, err)
 
 
-def username_validity_checker(username):
+def username_is_vailid(username):
 
-	if not isinstance(username, str):
-		username = str(username, 'utf-8').lower()
-	# check for cuss words, commands, illegal symbols
-	if len(username) < 4 or len(username) > src.globals.MAX_USERNAME_SIZE:
-		return 1
-
+	# check for curse words, commands, illegal symbols
+	if len(username) < 3 or len(username) > 128:
+		print("Username must be atleast four and less than 129 charcters.")
+		return False
+	username = username.lower()
 	allowed_characters = printable[:36] + '_.'
+	cleaned_username = ''.join(list(filter(lambda x: x in allowed_characters, \
+		username)))
 
-	if username != "".join(map(lambda x: x if x in allowed_characters else '', username)):
+	if username != cleaned_username:
+		print("Illegal characters present. Allowed charcters: ", \
+			' '.join(list(allowed_characters)))
 		return False
 	return True
