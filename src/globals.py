@@ -3,9 +3,9 @@ from pathlib import Path
 
 # GLOBAL VARIABLES
 
-SIGNATURE_DENOTER = b'\x00' #10101010
+SIGN = "sign"
 
-HASH_DENOTER = b'\xff'     #01010101
+HASH = "hash"
 
 SERVER = "server"
 
@@ -44,6 +44,7 @@ MAX_ADDRESS_LIST_SIZE = 100
 
 DMZ_BUFFER_SIZE = 32768
 
+MINUTE = 60
 HOUR = 60 * 60
 STRANGER_TTL = 10 * 60
 
@@ -60,7 +61,7 @@ MAX_EMAILS_PER_DAY = 100
 
 MAX_ALLOWABLE_TIME_DELTA = 90 # SECONDS
 
-SUPPORTED_VERSIONS = [b'\x00\x00']
+SUPPORTED_VERSIONS = ["0.1"]
 
 
 def code(n):
