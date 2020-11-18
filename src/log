@@ -8,7 +8,11 @@ Status:
     Entertains username availability checks and signup requests.
 
 TODO:
+    replace shell=True
+    we're feeding dmz data to msgpack...! that bugs me!
+    Make a requirements.txt
     Setup and secure a Postgres backend
+    Write a script for installing and setting up the server its dependencies
     Should we replace the request/response codes with the string equivalents
         of the same?
     Find a way to kill processes once they are done processing a request
