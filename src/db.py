@@ -2,16 +2,9 @@ from redis import Redis
 from getpass import getpass
 from sh.contrib import sudo
 from sh import systemctl
-from sqlite import connect
-
+from sqlite3 import connect
 
 import src.globals
-
-
-# using a redis instance as a sessions manager
-
-# use a sqlite3 db as a cold store for now
-# upgrade to something robust like postgresql later
 
 
 def start_hot_store():
@@ -139,34 +132,63 @@ def start_mail_db():
 	return (db_connection, cursor)
 
 
-def is_username_available(username):
-	query = """SELECT * FROM USERS WHERE username = ?"""
-	cursor.execute(query, (username,))
-    if cursor.fetchone():
-        return False
-    return True
+def username_is_available(username):
 
+	out, err = None, None
 
-def signup_user(username, encryption_public_key, signature_public_key):
 	try:
-		query = """INSERT INTO USERS (username, encryption_public_key, \
-			signature_public_key) VALUES (?, ?, ?)"""
-		cursor.execute(query, (username, encryption_public_key, signature_public_key))
-		db_connection.commit()
+		query = """
+			SELECT * FROM USERS
+			WHERE username=?
+			"""
+		key_db_cursor.execute(query, (username,))
+
+		if key_db_cursor.fetchone():
+			# see what it returns
+			out = src.globals.USERNAME_FOUND
+		else:
+			out = src.globals.USERNAME_NOT_FOUND
+		err = 0
+
+	except Error as e:
+		print("Database Error:", e)
+		err = 1
+
+	return (out, err)
+
+
+def add_user(username, encryption_public_key, signature_public_key):
+
+	out, err = None, None
+
+	try:
+		query = """
+			INSERT INTO USERS
+				(username,
+				encryption_public_key,
+				signature_public_key)
+			VALUES (?, ?, ?)
+			"""
+		key_db_cursor.execute(query, (username, encryption_public_key, signature_public_key))
+		key_db_connection.commit()
 
 		# creating a new database to store the client's data in
-		new_table = """CREATE TABLE MESSAGES (id INTEGER PRIMARY KEY, \
-			Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, mail BLOB)"""
-
+		new_table = """
+			CREATE TABLE MESSAGES
+				(id INTEGER PRIMARY KEY,
+				Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+				mail BLOB)
+			"""
 		user_db = connect("./src/databases/users/" + username)
 		user_db_cursor = user_db.cursor()
 		user_db_cursor.execute(new_table)
 		user_db.commit()
-		return 0
 
 	except:
-		return 1
+		err = 1
 
+	err = 0
+	return (out, err)
 
 blacklist, nonces, unauthenticated_clients, authenticated_clients = start_hot_store()
 key_db_connection, key_db_cursor = start_key_db()
