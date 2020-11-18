@@ -22,7 +22,7 @@ class Server():
 			conn, address = self.socket.accept()
 			client = address[0] + ':' + str(address[1])
 
-			print(client)
+			print("\nNew connection: ", client, '\n')
 
 			if src.db.blacklist.exists(client):
 				 # if a specific instance on this (IP : PORT) is misbehaving
@@ -58,7 +58,7 @@ def main():
 	try:
 		server_.start()
 	finally:
-		src.shutdown.shutdown()
+		src.shutdown.server()
 		for process in multiprocessing.active_children():
 			print("Shutting down process: ", process)
 			process.terminate()
