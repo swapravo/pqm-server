@@ -135,7 +135,6 @@ def start_mail_db():
 def username_is_available(username):
 
 	out, err = None, None
-
 	try:
 		query = """
 			SELECT * FROM USERS
@@ -154,6 +153,7 @@ def username_is_available(username):
 		print("Database Error:", e)
 		err = 1
 
+	err = 0
 	return (out, err)
 
 
@@ -186,9 +186,33 @@ def add_user(username, encryption_public_key, signature_public_key):
 
 	except:
 		err = 1
+		return (out, err)
+	err = 0
+	return (out, err)
+
+
+def fetch_keys(username):
+
+	out, err = None, None
+	try:
+		query = """
+			SELECT * FROM USERS
+			WHERE username=?
+			"""
+		key_db_cursor.execute(query, (username,))
+
+		out = key_db_cursor.fetchone():
+		print("This is supposed to be a byte string:", out)
+		if not out:
+			out = src.globals.USERNAME_NOT_FOUND
+
+	except Error as e:
+		print("Database Error:", e)
+		err = 1
 
 	err = 0
 	return (out, err)
+
 
 blacklist, nonces, unauthenticated_clients, authenticated_clients = start_hot_store()
 key_db_connection, key_db_cursor = start_key_db()
