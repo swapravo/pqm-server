@@ -7,6 +7,7 @@ import src.db
 def close(connection):
 	connection.shutdown(SHUT_RDWR)
 	connection.close()
+	src.shutdown.process()
 
 
 def block(connection, time, block_ip_and_port=True):
