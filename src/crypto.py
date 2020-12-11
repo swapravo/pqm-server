@@ -73,18 +73,6 @@ def generate_signature_keys(keyname):
 	return (out, err)
 
 
-def validate_key(key, key_is_public=True):
-	if key_is_public:
-	# for public keys
-		out, err = src.utils.execute("./ccr -n -i --name " + src.utils.random_name_generator(), key)
-	# for private keys
-	else:
-		out, err = src.utils.execute("./ccr -n -I --name " + src.utils.random_name_generator(),  key)
-	if err:
-		return False
-	return True
-
-
 def key_fingerprint(keyname):
 
 	out, err = None, None
@@ -168,7 +156,7 @@ def sign(message, recipient_name):
 	return (out, err)
 
 
-def verify_signature(signature):
+def verify_signature(from, signature):
 	out, err = src.utils.execute("./src/ccr -v ", signature)
 
 	# i have a bad feeling about this.
@@ -179,9 +167,12 @@ def verify_signature(signature):
 
 	if err or not out:
 		print("Signature Verification FAILED! Codecrypt returned:", err)
+		out = False
 		err = 1
-	else:
+	elif bytes(from, 'utf-8') in out and not err:
+		out = True
 		err = 0
+
 	return (out, err)
 
 
@@ -214,27 +205,3 @@ def symmetrically_decrypt(message, key):
 	except:
 		print("Symmetric decryption FAILED!")
 		return None
-
-
-"""
-def asymmetrically_respond(connection, message, key, key_name):
-
-	# ASSUMING ROLLING_PUBLIC_KEY HAS BEEN SANITIZED
-	# need to add this temporary key in order to encrypt messages with it
-	# use a RAMDISK for THIS
-	with open(src.globals.USER_HOME+src.globals.CCR_FOLDER+key_name, 'wb') as fo:
-		fo.write(key)
-
-	# make sure these get executed
-	# include the try catches
-	src.utils.execute("./src/ccr -i -R " + src.globals.USER_HOME + \
-		src.globals.CCR_FOLDER + key_name + " --name " + key_name)
-	ciphertext = asymmetrically_encrypt(src.utils.pack(message), key_name)
-	remove(src.globals.USER_HOME+src.globals.CCR_FOLDER+key_name)
-
-	ciphertext = hash(ciphertext) + ciphertext
-	response = (len(ciphertext)).to_bytes(4, byteorder='little') + ciphertext
-
-	# insert timeout here!
-	connection.sendall(response)
-"""
