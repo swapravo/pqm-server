@@ -176,19 +176,6 @@ def verify_signature(from, signature):
 	return (out, err)
 
 
-def symmetrically_encrypt(message, key):
-	box = SecretBox(key)
-	return box.encrypt(message, nacl_random(SecretBox.NONCE_SIZE))
-
-
-def symmetrically_decrypt(message, key):
-	box = SecretBox(key)
-	try:
-		return box.decrypt(message)
-	except:
-		return 1
-
-
 def symmetric_key_generator():
 	return nacl_random(SecretBox.KEY_SIZE)
 
