@@ -63,6 +63,7 @@ MAX_ALLOWABLE_TIME_DELTA = 90 # SECONDS
 
 SUPPORTED_VERSIONS = ["0.1"]
 
+MAX_KEYS_DOWNLOADABLE_AT_ONCE = 100
 
 def code(n):
 	return (n).to_bytes(2, byteorder='little')
