@@ -1,3 +1,5 @@
+from functools import reduce
+
 import src.globals
 import src.network
 import src.crypto
@@ -158,9 +160,6 @@ def signup(connection, request):
 				"token": out}, \
 			"response": response})
 
-		#print("SIZEOF RESPONSE: ", len(response))
-		#print(response)
-
 		response = src.utils.sizeof(response) + response
 		# insert timeout here!
 		connection.send(response)
@@ -265,16 +264,35 @@ def login(connection, request):
 		src.network.block(connection, src.globals.HOUR)
 
 
-
 def reconnect(connection, request):
+	"""
+	check if the session_ID and the authentication code is
+	okay or not. If it is, then assign the client a new symmetric password.
+	the creds will be in redis
+	"""
+
 	pass
 
 
 def fetch_keys(connection, request):
-	pass
+	# request should contain only the email IDs
+	# check for redundant entries
+
+	keys = {}
+
+	if len(request) > src.globals.MAX_KEYS_DOWNLOADABLE_AT_ONCE:
+		src.network.block(connection, src.globals.STRANGER_TTL)
+
+	for username in request:
+		if not src.utils.username_is_valid(username):
+			src.network.block(connection, src.globals.STRANGER_TTL)
+		else:
+			keys[username] = src.db.fetch_keys(username)
+
+	return keys
 
 
-def update_mailbox(connection, request):
+def update_mailbox(connection):
 	pass
 
 
