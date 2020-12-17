@@ -94,7 +94,6 @@ def unauthenticated_client_greeter(connection):
 				request: dict, contains all necessary info to perfom the request
 					}
 		"""
-
 		try:
 			if not (len(request["timestamp"]) == 4 and
 				# and request_code is a valid code
@@ -144,11 +143,16 @@ def unauthenticated_client_greeter(connection):
 def authenticated_client_greeter(connection, session_ID):
 
     message_ID = 0
+	# password = fetch password from redis here using the session_ID
+	password = ''
 
 	while True:
 		request = src.network.recieve(connection, src.globals.DMZ_BUFFER_SIZE)
 
 		if request:
+			request = src.crypto.symmetrically_decrypt(request, password)
+			if request is None:
+				src.network.close(connection)
 			# feeding dmz data straight to this function
 			# is that safe?
 			request = src.utils.unpack(request)
@@ -163,7 +167,7 @@ def authenticated_client_greeter(connection, session_ID):
     			src.globals.MAX_ALLOWABLE_TIME_DELTA):
 
     			print("Invalid message!")
-    			src.network.block(connection)
+    			src.network.close(connection)
 
         # check if this statement skips blank requests
 		# but that wont quit the process!!!!
@@ -177,14 +181,16 @@ def authenticated_client_greeter(connection, session_ID):
         # possible requests in place of a chain of if elses...
 
         if request["request_code"] == src.globals.GET_PUBLIC_KEYS:
-            fn()
+            response = src.requests.fetch_keys(connection, request["request"])
 		elif request["request_code"] == src.globals.UPDATE_MAILBOX:
-			fn()
+			response = src.requests.update_mailbox(connection)
 		elif request["request_code"] == src.globals.SEND_MAIL:
-			fn()
+			response = ""
 		elif request["request_code"] == src.globals.DELETE_MAIL:
-			fn()
+			response = ""
 		elif request["request_code"] == src.globals.DELETE_ACCOUNT:
-			fn()
+			response = ""
+		elif request["request_code"] == src.globals.DOWNLOAD_MAIL:
+			response = ""
 		else:
 			src.network.block(connection, src.globals.HOUR)
