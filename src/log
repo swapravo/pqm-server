@@ -25,3 +25,4 @@ TODO:
             starts up on the same port
     Find a robust way to remove keys that are written to the
         server's keyring: -> should we modify Codecrypt?
+      Need to keep logs about user activity!
