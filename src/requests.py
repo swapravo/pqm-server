@@ -305,7 +305,51 @@ def delete_account(connection, request):
 
 
 def send_mail(connection, request):
-	pass
+
+	sender = src.db.username(connection)
+	# if sender == anon:
+	# return
+
+	request = src.utils.unpack(request)
+	if request is None:
+		src.network.block(connection, src.globals.HOUR)
+
+	try:
+		if not (
+			isinstance(request, dict) and
+			isinstance(request["signed_mail"], dict) and
+			isinstance(request["signed_mail"]["signature"], bytes) and
+			isinstance(request["signed_mail"]["mail"], bytes) and
+			isinstance(request["signed_mail"]["key"], bytes) and
+			src.utils.username_is_valid(request["recipient"])):
+			src.network.block(connection, src.globals.HOUR)
+	except:
+		# be more specific about the error
+		src.network.block(connection, src.globals.HOUR)
+
+	# WRITE A FUNCTION THAT MAPS CONNECTION OBJECTS TO USERNAMES. USE REDIS.
+	# PLACE IT IN SRC.DB
+
+	mail_hash, err = src.crypto.verify_signature( \
+		sender, request["signed_mail"]["signature"])
+	if err:
+		src.network.close(connection)
+	else:
+		del err
+	if not isinstance(addresses, dict):
+		src.network.block(connection, src.globals.HOUR)
+
+	if src.crypto.hash(request["signed_mail"]["mail"]) != mail_hash:
+		# skip storing this mail as this failed checksum verification
+		# maybe we can inform the user about it
+		# continue recieving other mails, if any
+		return
+
+	out, err = src.db.add_mail(sender, request["recipient"], request["signed_mail"])
+	if err:
+		return (None, 1)
+	else:
+		return (None, 0)
 
 
 def download_mail(connection, request):
