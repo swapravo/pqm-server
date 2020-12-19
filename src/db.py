@@ -1,3 +1,8 @@
+"""
+PLEASE REMEMBER THAT THE FUNCTIONS HERE TRUST THE DATA THAT IS PROVIDED TO THEM.
+THEREFORE, DATA MUST BE VALIDATED BEFORE SENDING IT OVER HERE
+"""
+
 from redis import Redis
 from getpass import getpass
 from sh.contrib import sudo
@@ -115,9 +120,19 @@ def assign_buffer(client, auth):
 	else:
 		with unauthenticated_clients.pipeline() as pipeline:
 			pipeline.set(client, 0, ex=src.globals.STRANGER_TTL)
-			pipeline.set(client+':buffer', src.globals.USERNAME_AVAILABILITY_CHECK_REQUEST_SIZE, ex=src.globals.STRANGER_TTL)
+			pipeline.set(client+':buffer', \
+				src.globals.USERNAME_AVAILABILITY_CHECK_REQUEST_SIZE, \
+				ex=src.globals.STRANGER_TTL)
 			pipeline.execute()
 		return src.globals.USERNAME_AVAILABILITY_CHECK_REQUEST_SIZE
+
+
+def username(connection):
+	"""
+	this function takes a connection object and returns the username
+	of the person connected
+	"""
+	pass
 
 
 def start_key_db():
@@ -212,6 +227,21 @@ def fetch_keys(username):
 
 	err = 0
 	return (out, err)
+
+
+def add_mail(from, to, mail):
+	"""
+	insert mail into the table of the recipient
+	"""
+	pass
+
+
+def delete_mail():
+	pass
+
+
+def delete_account():
+	pass
 
 
 blacklist, nonces, unauthenticated_clients, authenticated_clients = start_hot_store()
