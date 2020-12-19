@@ -170,7 +170,7 @@ def authenticated_client_greeter(connection, session_ID):
     			src.network.close(connection)
 
         # check if this statement skips blank requests
-		# but that wont quit the process!!!!
+		# BUT THAT WONT QUIT THE PROCESS!!!!
         else:
             # if it is a blank request, then skip it
             continue
