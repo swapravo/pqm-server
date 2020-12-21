@@ -1,6 +1,5 @@
 import src.requests
 import src.network
-import src.shutdown
 import src.utils
 import src.crypto
 import src.db
@@ -95,7 +94,7 @@ def unauthenticated_client_greeter(connection):
 					}
 		"""
 		try:
-			if not (len(request["timestamp"]) == 4 and
+			if not (isinstance(request["timestamp"], int) and
 				# and request_code is a valid code
 				isinstance(request["request_code"], bytes) and
 				len(request["request_code"]) == 2 and
@@ -138,8 +137,11 @@ def unauthenticated_client_greeter(connection):
 			src.network.block(connection, src.globals.STRANGER_TTL)
 
 
-# choose a better name
-# requests routed through this method are symmetrically encrypted
+"""
+CHOOSE A BETTER NAME
+REQUESTS ROUTED THROUGH THIS METHOD ARE SYMMETRICALLY ENCRYPTED
+THIS METHOD DOES THE SENDING/RECIEVING, SYMMETRIC ENCRYPTION/DECRYPTION
+"""
 def authenticated_client_greeter(connection, session_ID):
 
     message_ID = 0
@@ -179,18 +181,19 @@ def authenticated_client_greeter(connection, session_ID):
 
         # was thinking of having a hash set (constant time) containing all
         # possible requests in place of a chain of if elses...
-
+		# look into which requests send data back, encrypt it
+		# and send it back
         if request["request_code"] == src.globals.GET_PUBLIC_KEYS:
             response = src.requests.fetch_keys(connection, request["request"])
 		elif request["request_code"] == src.globals.UPDATE_MAILBOX:
 			response = src.requests.update_mailbox(connection)
+		elif request["request_code"] == src.globals.SYNC_MAILBOX:
+			response = src.requests.sync_mailbox()
 		elif request["request_code"] == src.globals.SEND_MAIL:
-			response = ""
+			response = src.requests.send_mail()
 		elif request["request_code"] == src.globals.DELETE_MAIL:
-			response = ""
+			response = src.requests.delete_mail()
 		elif request["request_code"] == src.globals.DELETE_ACCOUNT:
-			response = ""
-		elif request["request_code"] == src.globals.DOWNLOAD_MAIL:
-			response = ""
+			response = src.requests.delete_account()
 		else:
 			src.network.block(connection, src.globals.HOUR)
