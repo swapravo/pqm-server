@@ -9,6 +9,8 @@ Status:
 
 TODO:
     replace shell=True
+    REPORT ABNORMAL ERRORS/EXITS preferably using if err:...
+    create a block/spam list curated for eacn user.
     we're feeding dmz data to msgpack...! that bugs me!
     Make a requirements.txt
     Setup and secure a Postgres backend
