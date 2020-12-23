@@ -54,11 +54,13 @@ def unauthenticated_client_greeter(connection):
 				isinstance(request["request"], bytes)):
 
 				print("Malformed request: Datatype Error!")
-				src.network.block(connection, src.globals.HOUR, block_ip_and_port=True)
+				src.network.block(connection, src.globals.HOUR, \
+					block_ip_and_port=True)
 
 		except:
 			print("Malformed request: Dictionary key error!")
-			src.network.block(connection, src.globals.HOUR, block_ip_and_port=True)
+			src.network.block(connection, src.globals.HOUR, \
+				block_ip_and_port=True)
 
 		# try except key error return
 		# and handle version specific stuff!
@@ -72,7 +74,8 @@ def unauthenticated_client_greeter(connection):
 				# hash verification FAILED
 				src.network.close(connection)
 
-		request, err = src.crypto.asymmetrically_decrypt(request["request"], src.globals.SERVER)
+		request, err = src.crypto.asymmetrically_decrypt(request["request"], \
+			src.globals.SERVER)
 		if err:
 			src.network.close(connection)
 
@@ -103,13 +106,16 @@ def unauthenticated_client_greeter(connection):
 				isinstance(request["request"], dict)):
 
 				#print("Inner request 1 error!")
-				src.network.block(connection, src.globals.HOUR, block_ip_and_port=True)
+				src.network.block(connection, src.globals.HOUR, \
+					block_ip_and_port=True)
 
 		except:
-			src.network.block(connection, src.globals.HOUR, block_ip_and_port=True)
+			src.network.block(connection, src.globals.HOUR, \
+				block_ip_and_port=True)
 
-		if src.utils.timedelta(src.utils.timestamp(), request["timestamp"]) > \
-			src.globals.MAX_ALLOWABLE_TIME_DELTA or src.db.nonces.exists(request["nonce"]):
+		if src.utils.timestamp() - request["timestamp"] > \
+			src.globals.MAX_ALLOWABLE_TIME_DELTA or \
+			src.db.nonces.exists(request["nonce"]):
 
 			# should i block this user for a few minutes
 			# or just close the connection
@@ -117,11 +123,13 @@ def unauthenticated_client_greeter(connection):
 			# print("Timeout error!")
 			src.network.block(ip+':'+port, src.globals.MAX_ALLOWABLE_TIME_DELTA)
 
-		src.db.nonces.set(request["nonce"], 0, ex=src.globals.MAX_ALLOWABLE_TIME_DELTA)
+		src.db.nonces.set(request["nonce"], 0, \
+			ex=src.globals.MAX_ALLOWABLE_TIME_DELTA)
 		request["request"]["nonce"] = request["nonce"]
 
 		if request["request_code"] == src.globals.USERNAME_AVAILABILITY_CHECK:
-			src.requests.username_availability_check(connection, request["request"])
+			src.requests.username_availability_check(connection, \
+				request["request"])
 
 		elif request["request_code"] == src.globals.SIGNUP:
 			src.requests.signup(connection, request["request"])
