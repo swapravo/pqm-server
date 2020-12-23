@@ -8,6 +8,7 @@ Status:
     Entertains username availability checks and signup requests.
 
 TODO:
+    Block IP for request floods and block usernames for sending mangled requests
     replace shell=True
     REPORT ABNORMAL ERRORS/EXITS preferably using if err:...
     create a block/spam list curated for eacn user.
