@@ -1,6 +1,5 @@
 from socket import SHUT_RDWR
 
-
 import src.db
 
 
@@ -10,17 +9,12 @@ def close(connection):
 	src.shutdown.process()
 
 
-def block(connection, time, block_ip_and_port=True):
+def block(connection, time):
 
-	ip, port = connection.getpeername()
-	port = str(port)
-
-	if block_ip_and_port:
-		print("Blocked ", ip, port, "for", time, " seconds.")
-		src.db.blacklist.set(ip + ':' + port, 0, ex=time)
-	else:
-		print("Blocked ", ip, "for ", time)
-		src.db.blacklist.set(ip, 0, ex=time)
+	user = src.db.username(connection)
+	if user is None:
+		user, port = connection.getpeername()
+	src.db.blacklist.set(user, 0, ex=time)
 	close(connection)
 
 
