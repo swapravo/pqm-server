@@ -1,12 +1,14 @@
-from functools import reduce
+"""
+FUNCTIONS HERE SERIALISE, DESERIALISE DATA AND VALIDATE DATA
+"""
 
 import src.globals
 import src.network
 import src.crypto
 import src.utils
-import src.shutdown
 
 
+# this is an asymmetric method. it sends/recieves, encrypts/decrypts data itself
 def username_availability_check(connection, request):
 
 	"""
@@ -27,11 +29,7 @@ def username_availability_check(connection, request):
 			"response": src.globals.USERNAME_FOUND or src.globals.USERNAME_NOT_FOUND
 			}
 		}
-	"""
 
-	ip, port = connection.getpeername()
-
-	"""
 	STRUCTURE OF THE REQUEST
 	request = {
 		nonce: bytes
@@ -39,6 +37,8 @@ def username_availability_check(connection, request):
 		rolling_public_key: bytes, a one time public key
 			}
 	"""
+
+	ip, port = connection.getpeername()
 
 	try:
 		if not (
@@ -71,10 +71,10 @@ def username_availability_check(connection, request):
 
 	#print(response, err)
 
-	response = src.utils.pack({ \
-		"token": { \
-			"type": src.globals.HASH", \
-			"token": src.crypto.hash(response)}, \
+	response = src.utils.pack({
+		"token": {
+			"type": src.globals.HASH,
+			"token": src.crypto.hash(response)},
 		"response": response})
 
 	response = src.utils.sizeof(response) + response
@@ -86,6 +86,7 @@ def username_availability_check(connection, request):
 	print("Processed a username avail request!")
 
 
+# this is an asymmetric method. it sends/recieves, encrypts/decrypts data itself
 def signup(connection, request):
 
 	"""
@@ -171,6 +172,7 @@ def signup(connection, request):
 		src.network.block(connection, src.globals.HOUR)
 
 
+# this is an asymmetric method. it sends/recieves, encrypts/decrypts data itself
 def login(connection, request):
 
 	"""
@@ -264,13 +266,13 @@ def login(connection, request):
 		src.network.block(connection, src.globals.HOUR)
 
 
-def reconnect(connection, request):
+# this is an asymmetric method. it sends/recieves, encrypts/decrypts data itself
+def reconnect(connection):
 	"""
 	check if the session_ID and the authentication code is
 	okay or not. If it is, then assign the client a new symmetric password.
 	the creds will be in redis
 	"""
-
 	pass
 
 
@@ -289,18 +291,26 @@ def fetch_keys(connection, request):
 		else:
 			keys[username] = src.db.fetch_keys(username)
 
-	return keys
+	keys = src.utils.pack(keys)
+	return (keys, 0)
 
 
-def update_mailbox(connection):
-	pass
-
-
-def delete_mail(connection, request):
+def sync_mailbox(connection):
+	"""
+	sync user to server or server to user
+	what if the user wants to delete mails from the mail
+	as soon as they download it from the server
+	"""
+	user = src.db.username(connection)
 	pass
 
 
 def delete_account(connection, request):
+	# do some kind of confirmation
+	pass
+
+
+def delet_mail():
 	pass
 
 
@@ -352,5 +362,14 @@ def send_mail(connection, request):
 		return (None, 0)
 
 
-def download_mail(connection, request):
-	pass
+def update_mailbox(connection, request):
+
+	user = src.db.username(connection)
+	mails, err = src.db.fetch_new_mails(user)
+	if err:
+		src.network.close(connection)
+	if mails is None:
+		return (src.globals.NO_CHANGES_IN_MAILBOX, 0)
+	else:
+		mails = src.utils.pack(mails)
+		return (mails, 0)
