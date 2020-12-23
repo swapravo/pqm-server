@@ -32,15 +32,7 @@ def random_name_generator(length=src.globals.RANDOM_NAME_LENGTH):
 
 def timestamp():
 	# unix timestamps are 4 bytes long
-	return round(time()).to_bytes(4, byteorder='little')
-
-
-def timedelta(timestamp1, timestamp2):
-	delta = int.from_bytes(timestamp1, byteorder='little') - \
-		int.from_bytes(timestamp2, byteorder='little')
-	if delta < 0:
-		return -delta
-	return delta
+	return round(time())
 
 
 def execute(command, data=None):
