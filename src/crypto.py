@@ -156,7 +156,7 @@ def sign(message, recipient_name):
 	return (out, err)
 
 
-def verify_signature(from, signature):
+def verify_signature(_from, signature):
 	out, err = src.utils.execute("./src/ccr -v ", signature)
 
 	# i have a bad feeling about this.
@@ -169,7 +169,7 @@ def verify_signature(from, signature):
 		print("Signature Verification FAILED! Codecrypt returned:", err)
 		out = False
 		err = 1
-	elif bytes(from, 'utf-8') in out and not err:
+	elif bytes(_from, 'utf-8') in out and not err:
 		out = True
 		err = 0
 
