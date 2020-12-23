@@ -300,6 +300,7 @@ def sync_mailbox(connection):
 	sync user to server or server to user
 	what if the user wants to delete mails from the mail
 	as soon as they download it from the server
+	basically diff the databases
 	"""
 	user = src.db.username(connection)
 	pass
@@ -310,16 +311,18 @@ def delete_account(connection, request):
 	pass
 
 
-def delet_mail():
+def delete_mail(connection, request):
 	pass
 
 
 def send_mail(connection, request):
 
 	sender = src.db.username(connection)
-	# if sender == anon:
-	# return
+	if sender is None:
+		# raise some kind of an alarm
+		src.network.block(connection)
 
+	# should the unpacking the done here or in authenticated_clients()?
 	request = src.utils.unpack(request)
 	if request is None:
 		src.network.block(connection, src.globals.HOUR)
@@ -346,7 +349,7 @@ def send_mail(connection, request):
 		src.network.close(connection)
 	else:
 		del err
-	if not isinstance(addresses, dict):
+	if not isinstance(request["recipient"], dict):
 		src.network.block(connection, src.globals.HOUR)
 
 	if src.crypto.hash(request["signed_mail"]["mail"]) != mail_hash:
@@ -355,14 +358,15 @@ def send_mail(connection, request):
 		# continue recieving other mails, if any
 		return
 
-	out, err = src.db.add_mail(sender, request["recipient"], request["signed_mail"])
+	out, err = src.db.add_mail(sender, request["recipient"], \
+		request["signed_mail"])
 	if err:
 		return (None, 1)
 	else:
 		return (None, 0)
 
 
-def update_mailbox(connection, request):
+def update_mailbox(connection):
 
 	user = src.db.username(connection)
 	mails, err = src.db.fetch_new_mails(user)
