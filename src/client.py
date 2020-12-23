@@ -142,9 +142,10 @@ CHOOSE A BETTER NAME
 REQUESTS ROUTED THROUGH THIS METHOD ARE SYMMETRICALLY ENCRYPTED
 THIS METHOD DOES THE SENDING/RECIEVING, SYMMETRIC ENCRYPTION/DECRYPTION
 """
+
 def authenticated_client_greeter(connection, session_ID):
 
-    message_ID = 0
+	message_ID = 0
 	# password = fetch password from redis here using the session_ID
 	password = ''
 
@@ -160,31 +161,31 @@ def authenticated_client_greeter(connection, session_ID):
 			request = src.utils.unpack(request)
 			if not isinstance(request, dict):
 				print("Unpacking FAILED")
-    			src.network.close(connection)
+				src.network.close(connection)
 
             # validate message here
-            if (request["session_ID"] != session_ID) or \
-                (request["message_id"] != message_ID) or \
-                (src.utils.timedelta(src.utils.timestamp(), request["timestamp"]) > \
-    			src.globals.MAX_ALLOWABLE_TIME_DELTA):
+			if not (request["session_ID"] == session_ID and \
+				request["message_id"] == message_ID and \
+                src.utils.timedelta(src.utils.timestamp(), \
+				request["timestamp"]) < src.globals.MAX_ALLOWABLE_TIME_DELTA):
 
-    			print("Invalid message!")
-    			src.network.close(connection)
+				print("Invalid message!")
+				src.network.close(connection)
 
         # check if this statement skips blank requests
 		# BUT THAT WONT QUIT THE PROCESS!!!!
-        else:
+		else:
             # if it is a blank request, then skip it
-            continue
+			continue
 
-        message_ID += 1
+		message_ID += 1
 
         # was thinking of having a hash set (constant time) containing all
         # possible requests in place of a chain of if elses...
 		# look into which requests send data back, encrypt it
 		# and send it back
-        if request["request_code"] == src.globals.GET_PUBLIC_KEYS:
-            response = src.requests.fetch_keys(connection, request["request"])
+		if request["request_code"] == src.globals.GET_PUBLIC_KEYS:
+			response = src.requests.fetch_keys(connection, request["request"])
 		elif request["request_code"] == src.globals.UPDATE_MAILBOX:
 			response = src.requests.update_mailbox(connection)
 		elif request["request_code"] == src.globals.SYNC_MAILBOX:
