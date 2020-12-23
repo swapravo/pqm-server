@@ -160,6 +160,8 @@ def authenticated_client_greeter(connection, session_ID):
 	while True:
 		request = src.network.recieve(connection, src.globals.DMZ_BUFFER_SIZE)
 
+		# surround this in a try:
+
 		if request:
 			request = src.crypto.symmetrically_decrypt(request, password)
 			if request is None:
@@ -174,14 +176,18 @@ def authenticated_client_greeter(connection, session_ID):
             # validate message here
 			if not (request["session_ID"] == session_ID and \
 				request["message_id"] == message_ID and \
-                src.utils.timedelta(src.utils.timestamp(), \
-				request["timestamp"]) < src.globals.MAX_ALLOWABLE_TIME_DELTA):
+                src.utils.timedelta(src.utils.timestamp(), request["timestamp"]) \
+					< src.globals.MAX_ALLOWABLE_TIME_DELTA and
+				isinstance(request["request_code"], bytes) and
+				len(request["request_code"]) == 2 and
+				"request" in request):
 
 				print("Invalid message!")
 				src.network.close(connection)
 
         # check if this statement skips blank requests
 		# BUT THAT WONT QUIT THE PROCESS!!!!
+		# heartbeats for the client???
 		else:
             # if it is a blank request, then skip it
 			continue
@@ -193,16 +199,16 @@ def authenticated_client_greeter(connection, session_ID):
 		# look into which requests send data back, encrypt it
 		# and send it back
 		if request["request_code"] == src.globals.GET_PUBLIC_KEYS:
-			response = src.requests.fetch_keys(connection, request["request"])
+			response, err = src.requests.fetch_keys(connection, request["request"])
 		elif request["request_code"] == src.globals.UPDATE_MAILBOX:
 			response = src.requests.update_mailbox(connection)
 		elif request["request_code"] == src.globals.SYNC_MAILBOX:
-			response = src.requests.sync_mailbox()
+			response = src.requests.sync_mailbox(connection)
 		elif request["request_code"] == src.globals.SEND_MAIL:
-			response = src.requests.send_mail()
+			response = src.requests.send_mail(connection, request["request"])
 		elif request["request_code"] == src.globals.DELETE_MAIL:
-			response = src.requests.delete_mail()
+			response = src.requests.delete_mail(connection, request["request"])
 		elif request["request_code"] == src.globals.DELETE_ACCOUNT:
-			response = src.requests.delete_account()
+			response = src.requests.delete_account(connection, request["request"])
 		else:
 			src.network.block(connection, src.globals.HOUR)
