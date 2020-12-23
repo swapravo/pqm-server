@@ -253,7 +253,7 @@ def last_login_timestamp(username):
 	return
 
 
-def fetch_new_mails(username):
+def update_mailbox(username):
 	"""
 	set a limit of how much data can
 	be fetched at once
