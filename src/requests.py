@@ -48,11 +48,11 @@ def username_availability_check(connection, request):
 			src.crypto.key_is_valid(request["rolling_public_key"])):
 
 			print("Malformed Username availability check request: datatype mismatch!")
-			src.network.block(connection, src.globals.STRANGER_TTL, True)
+			src.network.block(connection, src.globals.STRANGER_TTL)
 
 	except:
 		print("Malformed Username availability check request: Dictionary Key Eror!")
-		src.network.block(connection, src.globals.STRANGER_TTL, True)
+		src.network.block(connection, src.globals.STRANGER_TTL)
 
 	response, err = src.db.username_is_available(request["username"])
 	if err:
@@ -267,7 +267,7 @@ def login(connection, request):
 
 
 # this is an asymmetric method. it sends/recieves, encrypts/decrypts data itself
-def reconnect(connection):
+def reconnect(connection, request):
 	"""
 	check if the session_ID and the authentication code is
 	okay or not. If it is, then assign the client a new symmetric password.
@@ -316,11 +316,10 @@ def delete_mail(connection, request):
 
 
 def send_mail(connection, request):
-
 	sender = src.db.username(connection)
 	if sender is None:
 		# raise some kind of an alarm
-		src.network.block(connection)
+		src.network.block(connection, src.globals.HOUR)
 
 	# should the unpacking the done here or in authenticated_clients()?
 	request = src.utils.unpack(request)
@@ -347,8 +346,6 @@ def send_mail(connection, request):
 		sender, request["signed_mail"]["signature"])
 	if err:
 		src.network.close(connection)
-	else:
-		del err
 	if not isinstance(request["recipient"], dict):
 		src.network.block(connection, src.globals.HOUR)
 
@@ -356,14 +353,13 @@ def send_mail(connection, request):
 		# skip storing this mail as this failed checksum verification
 		# maybe we can inform the user about it
 		# continue recieving other mails, if any
-		return
+		return (None, 1)
 
 	out, err = src.db.add_mail(sender, request["recipient"], \
 		request["signed_mail"])
 	if err:
 		return (None, 1)
-	else:
-		return (None, 0)
+	return (None, 0)
 
 
 def update_mailbox(connection):
@@ -374,6 +370,5 @@ def update_mailbox(connection):
 		src.network.close(connection)
 	if mails is None:
 		return (src.globals.NO_CHANGES_IN_MAILBOX, 0)
-	else:
-		mails = src.utils.pack(mails)
-		return (mails, 0)
+	mails = src.utils.pack(mails)
+	return (mails, 0)

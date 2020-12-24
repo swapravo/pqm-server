@@ -29,7 +29,7 @@ def unauthenticated_client_greeter(connection):
 
 		# SEE WHAT THIS ELSE DOES
 		else:
-            # if it is a blank request, then skip it
+			# if it is a blank request, then skip it
 			continue
 
 		"""
@@ -54,13 +54,11 @@ def unauthenticated_client_greeter(connection):
 				isinstance(request["request"], bytes)):
 
 				print("Malformed request: Datatype Error!")
-				src.network.block(connection, src.globals.HOUR, \
-					block_ip_and_port=True)
+				src.network.block(connection, src.globals.HOUR)
 
 		except:
 			print("Malformed request: Dictionary key error!")
-			src.network.block(connection, src.globals.HOUR, \
-				block_ip_and_port=True)
+			src.network.block(connection, src.globals.HOUR)
 
 		# try except key error return
 		# and handle version specific stuff!
@@ -106,12 +104,10 @@ def unauthenticated_client_greeter(connection):
 				isinstance(request["request"], dict)):
 
 				#print("Inner request 1 error!")
-				src.network.block(connection, src.globals.HOUR, \
-					block_ip_and_port=True)
+				src.network.block(connection, src.globals.HOUR)
 
 		except:
-			src.network.block(connection, src.globals.HOUR, \
-				block_ip_and_port=True)
+			src.network.block(connection, src.globals.HOUR)
 
 		if src.utils.timestamp() - request["timestamp"] > \
 			src.globals.MAX_ALLOWABLE_TIME_DELTA or \
@@ -173,10 +169,10 @@ def authenticated_client_greeter(connection, session_ID):
 				print("Unpacking FAILED")
 				src.network.close(connection)
 
-            # validate message here
+			# validate message here
 			if not (request["session_ID"] == session_ID and \
 				request["message_id"] == message_ID and \
-                src.utils.timedelta(src.utils.timestamp(), request["timestamp"]) \
+				src.utils.timedelta(src.utils.timestamp(), request["timestamp"]) \
 					< src.globals.MAX_ALLOWABLE_TIME_DELTA and
 				isinstance(request["request_code"], bytes) and
 				len(request["request_code"]) == 2 and
@@ -185,17 +181,17 @@ def authenticated_client_greeter(connection, session_ID):
 				print("Invalid message!")
 				src.network.close(connection)
 
-        # check if this statement skips blank requests
+		# check if this statement skips blank requests
 		# BUT THAT WONT QUIT THE PROCESS!!!!
 		# heartbeats for the client???
 		else:
-            # if it is a blank request, then skip it
+			# if it is a blank request, then skip it
 			continue
 
 		message_ID += 1
 
-        # was thinking of having a hash set (constant time) containing all
-        # possible requests in place of a chain of if elses...
+		# was thinking of having a hash set (constant time) containing all
+		# possible requests in place of a chain of if elses...
 		# look into which requests send data back, encrypt it
 		# and send it back
 		if request["request_code"] == src.globals.GET_PUBLIC_KEYS:

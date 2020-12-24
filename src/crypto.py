@@ -1,6 +1,4 @@
-from os import urandom, remove
-from os.path import isfile
-from sys import byteorder
+from os import urandom
 from hashlib import blake2b
 from nacl.pwhash.argon2id import kdf
 from nacl.secret import SecretBox #  xsalsa20poly1305
@@ -37,8 +35,10 @@ def key_is_valid(key, key_is_public=True):
 			src.utils.random_name_generator(),  key)
 	if err:
 		return False
-	if out:
+	elif out:
 		return True
+	else:
+		return None
 
 
 def insert_public_key(key, keyname):
@@ -57,7 +57,7 @@ def remove_public_key(keyname):
 
 def generate_encryption_keys(keyname):
 	out, err = src.utils.execute("./src/ccr --gen-key ENC-256 --name " + keyname)
-	if not bytes("Gathering random seed bits from kernel", 'utf-8') in err:
+	if bytes("Gathering random seed bits from kernel", 'utf-8') not in err:
 		print("Public key generation FAILED! Codecrypt returned:", err)
 		return (out, err)
 	out, err = keyname, None
@@ -66,7 +66,7 @@ def generate_encryption_keys(keyname):
 
 def generate_signature_keys(keyname):
 	out, err = src.utils.execute("./src/ccr --gen-key SIG-256 --name " + keyname)
-	if not bytes("Gathering random seed bits from kernel", 'utf-8') in err:
+	if bytes("Gathering random seed bits from kernel", 'utf-8') not in err:
 		print("Signature key generation FAILED! Codecrypt returned:", err)
 		return (out, err)
 	out, err = keyname, None
@@ -75,14 +75,12 @@ def generate_signature_keys(keyname):
 
 def key_fingerprint(keyname):
 
-	out, err = None, None
-
 	if keyname[-2] == 'p':
 		mode = 'k'
 	elif keyname[-2] == 's':
 		mode = 'K'
 	else:
-		(out, err)
+		return (None, 1)
 
 	out, err = src.utils.execute("./src/ccr -" + mode + " --fingerprint -F " + keyname)
 	if err:

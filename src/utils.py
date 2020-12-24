@@ -4,7 +4,7 @@ from time import time
 from subprocess import Popen, PIPE
 from string import printable
 from sys import byteorder
-from shlex import split, quote
+
 
 import src.globals
 
@@ -36,7 +36,7 @@ def timestamp():
 
 
 def execute(command, data=None):
-    # SANITIZE commands here
+	# SANITIZE commands here
 
 	process = Popen([command], shell=True, stdout=PIPE, stdin=PIPE)
 	if data:
