@@ -151,13 +151,19 @@ def username(connection):
 
 
 def start_key_db():
-	db_connection = connect("./src/databases/keys/keys.db")
+	db_connection = connect("./src/databases/key.db")
 	cursor = db_connection.cursor()
 	return (db_connection, cursor)
 
 
 def start_mail_db():
-	db_connection = connect("./src/databases/mails/mails.db")
+	db_connection = connect("./src/databases/mail.db")
+	cursor = db_connection.cursor()
+	return (db_connection, cursor)
+
+
+def start_address_db():
+	db_connection = connect("./src/databases/addresses.db")
 	cursor = db_connection.cursor()
 	return (db_connection, cursor)
 
@@ -179,7 +185,7 @@ def username_is_available(_username):
 			out = src.globals.USERNAME_NOT_FOUND
 		err = 0
 
-	except Error as e:
+	except Exception as e:
 		print("Database Error:", e)
 		err = 1
 
@@ -189,11 +195,9 @@ def username_is_available(_username):
 
 def add_user(_username, encryption_public_key, signature_public_key):
 
-	out, err = None, None
-
 	try:
 		query = """
-			INSERT INTO USERS
+			INSERT INTO keys
 				(username,
 				encryption_public_key,
 				signature_public_key)
@@ -201,25 +205,31 @@ def add_user(_username, encryption_public_key, signature_public_key):
 			"""
 		key_db_cursor.execute(query, (_username, encryption_public_key, \
 			signature_public_key))
+		user_primary_key_query = """SELECT last_insert_rowid()"""
+		key_db_cursor.execute(user_primary_key_query)
+		user_primary_key = key_db_cursor.fetchone()[0]
+
+		if not isinstance(user_primary_key, int):
+			return (None, 1)
 		key_db_connection.commit()
 
+		# is it still unsafe?
 		# creating a new database to store the client's data in
-		new_table = """
-			CREATE TABLE MESSAGES
+		# sqlite3 does not allow table names to begin with numbers
+		new_address_table_query = """CREATE TABLE id_""" + \
+			str(user_primary_key) + """
 				(id INTEGER PRIMARY KEY,
-				Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-				mail BLOB)
-			"""
-		user_db = connect("./src/databases/users/" + _username)
-		user_db_cursor = user_db.cursor()
-		user_db_cursor.execute(new_table)
-		user_db.commit()
+				from_username TEXT NOT NULL,
+				to_username TEXT NOT NULL,
+				hash BLOB NOT NULL)"""
 
-	except:
-		err = 1
-		return (out, err)
-	err = 0
-	return (out, err)
+		address_db_cursor.execute(new_address_table_query)
+		address_db_connection.commit()
+
+	except Exception as e:
+		print("Database Error:", e)
+		return (None, 1)
+	return (None, 0)
 
 
 def fetch_keys(_username):
@@ -237,7 +247,7 @@ def fetch_keys(_username):
 		if not out:
 			out = src.globals.USERNAME_NOT_FOUND
 
-	except Error as e:
+	except Exception as e:
 		print("Database Error:", e)
 		err = 1
 
@@ -274,10 +284,61 @@ def delete_account():
 	pass
 
 
+def user_id(username):
+	query = """
+		SELECT id FROM keys
+		WHERE username=?
+		"""
+	key_db_cursor.execute(query, (username,))
+	uid = key_db_cursor.fetchone()
+	if uid is None:
+		return 0
+	return int(uid[0])
+
+
 def add_mail(_from, to, email):
-	return
+
+	from_uid = user_id(_from)
+	if not from_uid:
+		return (None, 1)
+
+	to_uid = user_id(to)
+	if not to_uid:
+		return (None, 1)
+
+	# still unsafe?
+	# check whether the timestamp is being added or not
+	address_query1 = """INSERT INTO id_""" + str(to_uid) + """ (
+		from_username,
+		to_username,
+		hash)
+		VALUES (?, ?, ?)
+		"""
+
+	address_query2 = """INSERT INTO id_""" + str(from_uid) + """ (
+		from_username,
+		to_username,
+		hash)
+		VALUES (?, ?, ?)
+		"""
+
+	mail_query = """
+		INSERT INTO mails (
+		id,
+		mail)
+		VALUES (?, ?)
+		"""
+
+	_hash = hash(email)
+
+	address_db_cursor.execute(address_query1, (_from, to, _hash,))
+	address_db_cursor.execute(address_query2, (_from, to, _hash,))
+	address_db_connection.commit()
+	mail_db_cursor.execute(mail_query, (_hash, email))
+	mail_db_connection.commit()
 
 
 blacklist, nonces, unauthenticated_clients, authenticated_clients = start_hot_store()
 key_db_connection, key_db_cursor = start_key_db()
+address_db_connection, address_db_cursor = start_address_db()
 mail_db_connection, mail_db_cursor = start_mail_db()
