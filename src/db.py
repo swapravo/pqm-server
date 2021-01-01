@@ -11,6 +11,7 @@ from sh import systemctl
 from sqlite3 import connect
 
 import src.globals
+import src.crypto
 
 
 def start_hot_store():
@@ -170,27 +171,20 @@ def start_address_db():
 
 def username_is_available(_username):
 
-	out, err = None, None
 	try:
 		query = """
-			SELECT * FROM USERS
+			SELECT username FROM keys
 			WHERE username=?
 			"""
 		key_db_cursor.execute(query, (_username,))
 
 		if key_db_cursor.fetchone():
-			# see what it returns
-			out = src.globals.USERNAME_FOUND
-		else:
-			out = src.globals.USERNAME_NOT_FOUND
-		err = 0
+			return (False, 0)
+		return (True, 0)
 
 	except Exception as e:
 		print("Database Error:", e)
-		err = 1
-
-	err = 0
-	return (out, err)
+		return (None, 1)
 
 
 def add_user(_username, encryption_public_key, signature_public_key):
@@ -218,10 +212,9 @@ def add_user(_username, encryption_public_key, signature_public_key):
 		# sqlite3 does not allow table names to begin with numbers
 		new_address_table_query = """CREATE TABLE id_""" + \
 			str(user_primary_key) + """
-				(id INTEGER PRIMARY KEY,
+				(hash BLOB PRIMARY KEY,
 				from_username TEXT NOT NULL,
-				to_username TEXT NOT NULL,
-				hash BLOB NOT NULL)"""
+				to_username TEXT NOT NULL)"""
 
 		address_db_cursor.execute(new_address_table_query)
 		address_db_connection.commit()
@@ -234,33 +227,38 @@ def add_user(_username, encryption_public_key, signature_public_key):
 
 def fetch_keys(_username):
 
-	out, err = None, None
 	try:
 		query = """
-			SELECT * FROM USERS
+			SELECT encryption_public_key, signature_public_key
+			FROM keys
 			WHERE username=?
 			"""
 		key_db_cursor.execute(query, (_username,))
 
 		out = key_db_cursor.fetchone()
-		print("This is supposed to be a byte string:", out)
-		if not out:
-			out = src.globals.USERNAME_NOT_FOUND
-
-	except Exception as e:
-		print("Database Error:", e)
-		err = 1
-
-	err = 0
-	return (out, err)
+		if out:
+			return (out, 0)
+		return (None, 0)
+	except:
+		return (None, 1)
 
 
 def last_login_timestamp(_username):
-	"""
-	returns the last login unix
-	timestamp of the user
-	"""
-	return
+
+	try:
+		query = """
+			SELECT last_login_timestamp
+			FROM keys
+			WHERE username=?
+			"""
+		key_db_cursor.execute(query, (_username,))
+
+		out = key_db_cursor.fetchone()
+		if out:
+			return (out[0], 0)
+		return (None, 0)
+	except:
+		return (None, 1)
 
 
 def update_mailbox(_username):
@@ -276,8 +274,50 @@ def update_mailbox(_username):
 	return
 
 
-def delete_mail():
-	pass
+def delete_mail(_from, _hash):
+
+	# STILL UNSAFE?
+	delete_metadata = """DELETE FROM id_""" + \
+		str(user_id(_from)) + """ WHERE id=?"""
+
+	retrieve_score = """
+		SELECT score
+		FROM mails
+		WHERE id=?
+		"""
+
+	decrease_score = """
+		UPDATE mails
+		SET score=?
+		WHERE id=?
+		"""
+
+	delete_mail = """
+		DELETE FROM mails
+		WHERE id=?
+		"""
+
+	try:
+		address_db_cursor.execute(delete_metadata)
+		address_db_connection.commit()
+
+		mail_db_cursor.execute(retrieve_score, (_hash,))
+		score = mail_db_cursor.fetchone()
+		if score is None:
+			return (None, 1)
+		score = int(score[0])
+		# as every mail is custom-encrypted for the recipient, the max score can be 2
+		if score == 2:
+			mail_db_cursor.execute(decrease_score, (score-1, _hash,))
+		elif score == 1:
+			mail_db_cursor.execute(delete_mail, (_hash,))
+		else:
+			return (None, 1)
+		mail_db_connection.commit()
+		return (None, 0)
+	except Exception as e:
+		print("Database Error:", e)
+		return (None, 1)
 
 
 def delete_account():
@@ -286,7 +326,8 @@ def delete_account():
 
 def user_id(username):
 	query = """
-		SELECT id FROM keys
+		SELECT id
+		FROM keys
 		WHERE username=?
 		"""
 	key_db_cursor.execute(query, (username,))
@@ -325,17 +366,23 @@ def add_mail(_from, to, email):
 	mail_query = """
 		INSERT INTO mails (
 		id,
-		mail)
-		VALUES (?, ?)
+		mail,
+		score)
+		VALUES (?, ?, ?)
 		"""
 
-	_hash = hash(email)
+	_hash = src.crypto.hash(email)
 
-	address_db_cursor.execute(address_query1, (_from, to, _hash,))
-	address_db_cursor.execute(address_query2, (_from, to, _hash,))
-	address_db_connection.commit()
-	mail_db_cursor.execute(mail_query, (_hash, email))
-	mail_db_connection.commit()
+	try:
+		address_db_cursor.execute(address_query1, (_from, to, _hash,))
+		address_db_cursor.execute(address_query2, (_from, to, _hash,))
+		address_db_connection.commit()
+		mail_db_cursor.execute(mail_query, (_hash, email, 2,))
+		mail_db_connection.commit()
+		return (None, 0)
+	except Exception as e:
+		print("Database Error:", e)
+		return (None, 1)
 
 
 blacklist, nonces, unauthenticated_clients, authenticated_clients = start_hot_store()
