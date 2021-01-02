@@ -8,6 +8,7 @@ Status:
     Entertains username availability checks and signup requests.
 
 TODO:
+    Check for race conditions on shared resources: databases, Codecrypt, keyring
     Block IP for request floods and block usernames for sending mangled requests
     replace shell=True
     REPORT ABNORMAL ERRORS/EXITS preferably using if err:...
@@ -28,4 +29,7 @@ TODO:
             starts up on the same port
     Find a robust way to remove keys that are written to the
         server's keyring: -> should we modify Codecrypt?
-      Need to keep logs about user activity!
+    Need to keep logs about user activity!
+    When the remaining signature count starts to get low,
+      Codecrypt will print warning messages. In that case, users
+      are advised to generate and certify new keys.
