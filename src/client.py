@@ -1,3 +1,5 @@
+from math import abs
+
 import src.requests
 import src.network
 import src.utils
@@ -6,19 +8,16 @@ import src.db
 import src.globals
 
 
-# choose a better name
 # requests routed through this method are asymmetrically encrypted
-def unauthenticated_client_greeter(connection):
+def unauthenticated_client_handler(connection):
 
-	ip, port = connection.getpeername()
-	port = str(port)
+	ip, port = src.network.ip_port(connection)
 
 	# THROTTLE REQUESTS
 	# PREFERABLY FROM THE src.network.recieve fn
 
 	while True:
 		request = src.network.recieve(connection, src.globals.DMZ_BUFFER_SIZE)
-
 		if request:
 			# feeding dmz data straight to this function
 			# is that safe?
@@ -26,18 +25,15 @@ def unauthenticated_client_greeter(connection):
 			if not request or not isinstance(request, dict):
 				print("Unpacking FAILED")
 				src.network.close(connection)
-
-		# SEE WHAT THIS ELSE DOES
 		else:
-			# if it is a blank request, then skip it
-			continue
+			src.network.close(connection)
 
 		"""
 		STRUCTURE OF A REQUEST
 		request = {
 			version: str, version of the client
 			token: dict = {
-							"type": str, a "hash" or a "sign"ed hash,
+							"type": str, a "hash" or a "sign" (signed hash),
 							"token": bytes }
 					## NOTE: we have to allow unsigned hashes because
 					creating such a signature needs keys, generating which
@@ -45,7 +41,6 @@ def unauthenticated_client_greeter(connection):
 			request: bytes, asymmetrically encrypted, actual request }
 		"""
 
-		# validating supplied data here
 		try:
 			if not (
 				isinstance(request["version"], str) and
@@ -55,9 +50,10 @@ def unauthenticated_client_greeter(connection):
 
 				print("Malformed request: Datatype Error!")
 				src.network.block(connection, src.globals.HOUR)
-
 		except:
 			print("Malformed request: Dictionary key error!")
+			# this will happen iff someone modifies the source to add/remove
+			# dictionary field/value pairs
 			src.network.block(connection, src.globals.HOUR)
 
 		# try except key error return
@@ -79,9 +75,8 @@ def unauthenticated_client_greeter(connection):
 
 		if isinstance(request, bytes):
 			request = src.utils.unpack(request)
-			if not request or not isinstance(request, dict):
+			if not isinstance(request, dict):
 				src.network.close(connection)
-
 		else:
 			src.network.close(connection)
 
@@ -109,15 +104,14 @@ def unauthenticated_client_greeter(connection):
 		except:
 			src.network.block(connection, src.globals.HOUR)
 
-		if src.utils.timestamp() - request["timestamp"] > \
+		if abs(src.utils.timestamp() - request["timestamp"]) > \
 			src.globals.MAX_ALLOWABLE_TIME_DELTA or \
 			src.db.nonces.exists(request["nonce"]):
-
-			# should i block this user for a few minutes
+			# should i block this (user?) for a few minutes
 			# or just close the connection
 			# Or should i block this IP instead?
 			# print("Timeout error!")
-			src.network.block(ip+':'+port, src.globals.MAX_ALLOWABLE_TIME_DELTA)
+			src.network.block(ip, src.globals.MAX_ALLOWABLE_TIME_DELTA)
 
 		src.db.nonces.set(request["nonce"], 0, \
 			ex=src.globals.MAX_ALLOWABLE_TIME_DELTA)
@@ -140,14 +134,15 @@ def unauthenticated_client_greeter(connection):
 		else:
 			src.network.block(connection, src.globals.STRANGER_TTL)
 
+	# check if the user exists in the blacklist
+
 
 """
-CHOOSE A BETTER NAME
 REQUESTS ROUTED THROUGH THIS METHOD ARE SYMMETRICALLY ENCRYPTED
 THIS METHOD DOES THE SENDING/RECIEVING, SYMMETRIC ENCRYPTION/DECRYPTION
 """
 
-def authenticated_client_greeter(connection, session_ID):
+def authenticated_client_handler(connection, session_ID):
 
 	message_ID = 0
 	# password = fetch password from redis here using the session_ID
