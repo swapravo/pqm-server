@@ -9,8 +9,7 @@ query = """
 		id INTEGER PRIMARY KEY,
 		username TEXT UNIQUE NOT NULL,
 		encryption_public_key BLOB UNIQUE NOT NULL,
-		signature_public_key BLOB UNIQUE NOT NULL,
-		last_login_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+		signature_public_key BLOB UNIQUE NOT NULL
 		)
 	"""
 

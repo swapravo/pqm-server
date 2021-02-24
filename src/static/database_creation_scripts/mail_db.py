@@ -7,7 +7,9 @@ cursor = db_conn.cursor()
 query = """
 	CREATE TABLE mails (
 		id BLOB PRIMARY KEY,
-        mail BLOB NOT NULL
+		mail BLOB NOT NULL,
+		timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+		score INT NOT NULL
 		)
 	"""
 
