@@ -36,8 +36,10 @@ def timestamp():
 
 
 def execute(command, data=None):
-	# SANITIZE commands here
-
+	# I AM AWARE THAT THIS IS FLAGGED AS A VULNERABILITY.
+	# Setting shell=False should fix this but that leads to
+	# command parsing problems
+	# SANITIZE COMMANDS HERE
 	process = Popen([command], shell=True, stdout=PIPE, stdin=PIPE)
 	if data:
 		returned_data = process.communicate(input=data)
@@ -69,3 +71,19 @@ def username_is_vailid(username):
 			' '.join(list(allowed_characters)))
 		return False
 	return True
+
+
+def email_is_valid(address):
+
+	address = address.split('@')
+	if len(address) == 2:
+		return username_is_vailid(address[0]) and address[1] in src.globals.VALID_DOMAINS
+	return False
+
+
+def validate_ip_address(ip):
+	try:
+		ip_address(ip)
+		return True
+	except ValueError:
+		return False
