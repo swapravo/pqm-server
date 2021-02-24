@@ -9,15 +9,6 @@ def close(connection):
 	src.shutdown.process()
 
 
-def block(connection, time):
-
-	user = src.db.username(connection)
-	if user is None:
-		user, port = connection.getpeername()
-	src.db.blacklist.set(user, 0, ex=time)
-	close(connection)
-
-
 def recieve(connection, max_payload_size):
 
 	if max_payload_size == 0:
@@ -59,3 +50,8 @@ def send(connection, data):
 	except:
 		return 1
 		# press xxx to retry
+
+
+def ip_port(connection):
+	_ip, _port = connection.getpeername()[0]
+	return (_ip, str(_port))
